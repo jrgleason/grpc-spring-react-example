@@ -1,0 +1,9 @@
+--java_out=/Users/jrg/code/ai/stream-example/backend/target/generated-sources/protobuf
+--plugin=protoc-gen-MOZTb0W_aVraeNR5M3fHuBL_Y6U=/Users/jrg/.m2/repository/io/grpc/protoc-gen-grpc-java/1.72.0/protoc-gen-grpc-java-1.72.0-osx-aarch_64.exe
+--MOZTb0W_aVraeNR5M3fHuBL_Y6U_out=/Users/jrg/code/ai/stream-example/backend/target/generated-sources/protobuf
+--MOZTb0W_aVraeNR5M3fHuBL_Y6U_opt=jakarta_omit,@generated=omit
+/Users/jrg/code/ai/stream-example/backend/src/main/proto/user_service.proto
+--proto_path=/Users/jrg/code/ai/stream-example/backend/src/main/proto
+--proto_path=/Users/jrg/code/ai/stream-example/backend/target/protobuf-maven-plugin/generate/generate/archives/grpc-services-1.72.0-zstr9AwIwmqqCT7X8gFa4N1dZTw
+--proto_path=/Users/jrg/code/ai/stream-example/backend/target/protobuf-maven-plugin/generate/generate/archives/protobuf-java-4.30.2-AH1uE5tM9cO6Y2n1tic7ipmCPL0
+--proto_path=/Users/jrg/code/ai/stream-example/backend/target/protobuf-maven-plugin/generate/generate/archives/proto-google-common-protos-2.54.1-OXiocAMxCYpgm7ezWz25PPW3OE8

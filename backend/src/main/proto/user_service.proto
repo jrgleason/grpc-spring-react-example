@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package org.jrg.grpc;
+
+option java_multiple_files = true;
+option java_package = "org.jrg.grpc.generated";
+option java_outer_classname = "UserServiceProto";
+
+// User service definition
+service UserService {
+  // Get a user by ID
+  rpc GetUser(GetUserRequest) returns (User);
+  
+  // Get all users
+  rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+  
+  // Create a new user
+  rpc CreateUser(CreateUserRequest) returns (User);
+  
+  // Update an existing user
+  rpc UpdateUser(UpdateUserRequest) returns (User);
+  
+  // Delete a user
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  
+  // Stream users (server streaming)
+  rpc StreamUsers(StreamUsersRequest) returns (stream User);
+}
+
+// User message
+message User {
+  int64 id = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
+  int64 created_at = 5;
+}
+
+// Request messages
+message GetUserRequest {
+  int64 id = 1;
+}
+
+message GetAllUsersRequest {
+  // Empty for now, can add pagination later
+}
+
+message GetAllUsersResponse {
+  repeated User users = 1;
+  int32 total_count = 2;
+}
+
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+  string role = 3;
+}
+
+message UpdateUserRequest {
+  int64 id = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
+}
+
+message DeleteUserRequest {
+  int64 id = 1;
+}
+
+message DeleteUserResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message StreamUsersRequest {
+  int32 batch_size = 1;
+}
