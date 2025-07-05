@@ -21,9 +21,7 @@ org/jrg/grpc/generated/UserServiceGrpc$2.class
 org/jrg/grpc/generated/GetAllUsersRequest.class
 org/jrg/grpc/generated/User.class
 org/jrg/grpc/generated/CreateUserRequestOrBuilder.class
-org/jrg/grpc/controller/UserRestController.class
 org/jrg/grpc/generated/DeleteUserRequest.class
-org/jrg/grpc/controller/UserRestController$UpdateUserRequest.class
 org/jrg/grpc/generated/StreamUsersRequestOrBuilder.class
 org/jrg/grpc/generated/GetAllUsersRequest$1.class
 org/jrg/grpc/generated/GetAllUsersResponse.class
@@ -39,7 +37,6 @@ org/jrg/grpc/generated/GetUserRequest$Builder.class
 org/jrg/grpc/generated/User$1.class
 org/jrg/grpc/generated/StreamUsersRequest$1.class
 org/jrg/grpc/generated/DeleteUserResponse.class
-org/jrg/grpc/controller/UserRestController$CreateUserRequest.class
 org/jrg/grpc/generated/UserServiceGrpc$UserServiceBlockingStub.class
 org/jrg/grpc/generated/UserServiceGrpc$UserServiceBaseDescriptorSupplier.class
 org/jrg/grpc/generated/GetUserRequest.class

@@ -1,5 +1,4 @@
 /Users/jrg/code/ai/stream-example/backend/src/main/java/org/jrg/grpc/GrpcBackendApplication.java
-/Users/jrg/code/ai/stream-example/backend/src/main/java/org/jrg/grpc/controller/UserRestController.java
 /Users/jrg/code/ai/stream-example/backend/src/main/java/org/jrg/grpc/model/UserEntity.java
 /Users/jrg/code/ai/stream-example/backend/src/main/java/org/jrg/grpc/service/UserDataService.java
 /Users/jrg/code/ai/stream-example/backend/src/main/java/org/jrg/grpc/service/UserGrpcService.java
