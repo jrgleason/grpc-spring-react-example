@@ -1,62 +1,133 @@
-# React + Spring Boot gRPC Demo
+# gRPC-Web Full-Stack Application
 
-This project demonstrates communication between a React frontend and a Spring Boot backend using gRPC with gRPC-Web.
+A modern full-stack application demonstrating **pure gRPC communication** between a React frontend and Spring Boot backend, with no REST endpoints. Features type-safe communication using Protocol Buffers and gRPC-Web.
+
+## 🏗️ Architecture
+
+```
+React App (TypeScript) ←→ Envoy Proxy ←→ Spring Boot (gRPC Server)
+    Port 3000              Port 8080         Port 9090
+```
+
+- **Frontend**: React with TypeScript + gRPC-Web client
+- **Proxy**: Envoy for gRPC-Web ↔ gRPC translation  
+- **Backend**: Spring Boot with native gRPC server (no web/REST)
+- **Protocol**: 100% gRPC communication with Protocol Buffers
+
+## 📋 Prerequisites
+
+- **Java 24+** (for Spring Boot backend)
+- **Node.js 18+** (for React frontend)
+- **Docker** (for Envoy proxy)
+- **Maven** (for backend build)
+- **protoc** (Protocol Buffer compiler) - installed via npm
+
+## 🚀 Quick Start
+
+### 1. Clone and Setup
+```bash
+git clone <repository>
+cd stream-example
+```
+
+### 2. Start Backend (Terminal 1)
+```bash
+cd backend
+mvn spring-boot:run
+# Backend starts on port 9090
+```
+
+### 3. Start Envoy Proxy (Terminal 2)
+```bash
+# From project root
+docker run -it --rm -p 8080:8080 -p 9901:9901 \
+  -v $(pwd)/envoy.yaml:/etc/envoy/envoy.yaml \
+  envoyproxy/envoy:v1.28-latest -c /etc/envoy/envoy.yaml
+# Envoy starts on port 8080
+```
+
+### 4. Start Frontend (Terminal 3)
+```bash
+cd frontend
+npm install
+npm start
+# Frontend starts on port 3000
+```
+
+### 5. Open Application
+Navigate to **http://localhost:3000** and test the user management features.
+
+## 📚 Documentation
+
+- **[INSTRUCTIONS.md](./INSTRUCTIONS.md)** - Comprehensive guide explaining architecture, components, and development workflow
+- **[Docker Setup](#docker-alternative)** - Alternative Docker Compose setup
 
 ## Project Structure
 
 ```
 stream-example/
-├── backend/          # Spring Boot gRPC backend
+├── backend/                    # Spring Boot gRPC Server
+│   ├── src/main/
+│   │   ├── java/              # Service implementations
+│   │   ├── proto/             # Protocol Buffer definitions (.proto)
+│   │   └── resources/         # Application configuration
+│   ├── Dockerfile
+│   └── pom.xml               # Maven dependencies (gRPC, Spring Boot)
+├── frontend/                  # React TypeScript App
 │   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/
-│   │   │   ├── proto/    # Protocol Buffer definitions
-│   │   │   └── resources/
-│   │   ├── test/
-│   │   └── Dockerfile
-│   └── pom.xml
-├── frontend/         # React TypeScript frontend
-│   ├── src/
-│   │   ├── generated/    # Generated gRPC-Web client code
-│   │   ├── App.tsx
-│   │   └── ...
-│   ├── public/
-│   ├── package.json
-│   └── tsconfig.json
-├── envoy.yaml        # Envoy proxy configuration for gRPC-Web
-└── docker-compose.yml
+│   │   ├── generated/        # Auto-generated gRPC-Web clients
+│   │   ├── App.tsx          # Main React component
+│   │   └── App.css          # Styling
+│   └── package.json         # npm dependencies (gRPC-Web, React)
+├── envoy.yaml               # Envoy proxy configuration
+├── docker-compose.yml       # Multi-service orchestration
+├── INSTRUCTIONS.md          # Detailed architecture guide
+└── README.md               # This file
 ```
 
-## Features
+## ✨ Key Features
 
-### Backend (Spring Boot + gRPC)
-- Spring Boot 3.5.4-SNAPSHOT with official Spring gRPC support
-- Protocol Buffers for service definitions
-- UserService with CRUD operations
-- gRPC server on port 9090
-- No REST endpoints (gRPC-only)
+### 🔧 Backend (Spring Boot + gRPC)
+- Pure gRPC server (no REST/web endpoints)
+- Spring Boot 3.5 with official gRPC support
+- Type-safe Protocol Buffer definitions
+- UserService with full CRUD operations
+- Automatic Java code generation from .proto
 
-### Frontend (React + TypeScript + gRPC-Web)
+### 🎨 Frontend (React + gRPC-Web)
 - Modern React 18 with TypeScript
-- Responsive UI with CSS Grid and Flexbox
-- gRPC-Web client integration
-- User management with CRUD operations
-- Real-time communication via gRPC
+- Type-safe gRPC-Web client
+- Auto-generated client code from .proto
+- Responsive Material-inspired UI
+- Real-time communication
 
-### Envoy Proxy
-- gRPC-Web proxy for browser compatibility
-- CORS support for development
-- HTTP/2 to gRPC translation
+### 🔀 Envoy Proxy
+- gRPC-Web ↔ gRPC protocol translation
+- CORS handling for browser requests
+- HTTP/2 and connection management
+- Request/response logging
 
-## Getting Started
+## 🛠️ Development
 
-### Prerequisites
-- Java 24+
-- Node.js 18+
-- Maven 3.9+
-- Docker and Docker Compose
+### Code Generation Workflow
+When you modify `user_service.proto`:
 
-### Option 1: Docker Compose (Recommended)
+1. **Backend**: Maven auto-generates Java classes on build
+2. **Frontend**: Run `npm run proto:generate` for TypeScript clients
+
+### Environment Setup
+```bash
+# Backend dependencies
+mvn clean install
+
+# Frontend dependencies  
+cd frontend && npm install
+
+# Install Protocol Buffer compiler (if needed)
+npm install -g protoc
+```
+
+## Docker Alternative
 
 1. Start all services:
    ```bash
@@ -77,122 +148,125 @@ This will start:
    cd backend
    ```
 
-2. Compile and generate protobuf classes:
-   ```bash
-   mvn clean compile
-   ```
+Use Docker Compose for simplified multi-service setup:
 
-3. Run the Spring Boot application:
-   ```bash
-   mvn spring-boot:run
-   ```
+```bash
+# Build and start all services
+docker-compose up --build
 
-The backend will start on port 9090 (gRPC only).
+# Stop all services
+docker-compose down
+```
 
-#### Envoy Proxy Setup
+Services will be available at:
+- Frontend: http://localhost:3000
+- Envoy Proxy: http://localhost:8080
+- Backend: gRPC on port 9090
 
-1. Install Docker if not already installed
+## 🧪 Testing the Application
 
-2. Run Envoy proxy:
-   ```bash
-   docker run -it --rm -p 8080:8080 -p 9901:9901 \
-     -v $(pwd)/envoy.yaml:/etc/envoy/envoy.yaml \
-     envoyproxy/envoy:v1.28-latest \
-     -c /etc/envoy/envoy.yaml -l debug
-   ```
+### Manual Testing
+1. Open http://localhost:3000
+2. Click "Load Users" to fetch users via gRPC
+3. Use the form to create/edit users
+4. Test all CRUD operations
 
-#### Frontend Setup
+### gRPC Testing (Optional)
+```bash
+# Using grpcurl (if installed)
+grpcurl -plaintext localhost:9090 list
+grpcurl -plaintext localhost:9090 org.jrg.grpc.UserService/GetAllUsers
+```
 
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
+### Debugging
+- **Envoy Admin Interface**: http://localhost:9901
+- **Backend Logs**: Check console output
+- **Frontend Console**: Browser developer tools
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+## 🚧 Troubleshooting
 
-3. Generate gRPC-Web client code:
-   ```bash
-   npm run proto:generate
-   ```
+| Issue | Solution |
+|-------|----------|
+| **503 Service Unavailable** | Check if backend is running on port 9090 |
+| **CORS Errors** | Verify Envoy CORS configuration |
+| **Connection Refused** | Ensure Envoy can reach backend (check IP in envoy.yaml) |
+| **Method Not Found** | Regenerate proto clients after changes |
 
-4. Start the development server:
-   ```bash
-   npm start
-   ```
+For detailed troubleshooting, see [INSTRUCTIONS.md](./INSTRUCTIONS.md).
 
-The frontend will start on http://localhost:3000
-
-## API Endpoints
+## 🔧 gRPC Service Definition
 
 ### gRPC Service (via gRPC-Web on port 8080)
-- `GetUser(GetUserRequest)` - Get user by ID
-- `GetAllUsers(GetAllUsersRequest)` - Get all users
-- `CreateUser(CreateUserRequest)` - Create new user
-- `UpdateUser(UpdateUserRequest)` - Update user
-- `DeleteUser(DeleteUserRequest)` - Delete user
-- `StreamUsers(StreamUsersRequest)` - Stream users (server streaming)
-
-All gRPC calls are made through the Envoy proxy at http://localhost:8080
-
-## Protocol Buffer Definition
-
 The `user_service.proto` file defines:
-- `User` message with id, name, email, role, and creation timestamp
-- Request/response messages for all operations
-- `UserService` with unary and streaming RPC methods
 
-## Usage
+```protobuf
+service UserService {
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+  rpc CreateUser(CreateUserRequest) returns (User);
+  rpc UpdateUser(UpdateUserRequest) returns (User);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc StreamUsers(StreamUsersRequest) returns (stream User);
+}
 
-1. Start the services using Docker Compose or manually
-2. Open http://localhost:3000 in your browser
-3. The application will automatically connect to the gRPC backend via Envoy proxy
-4. Use the UI to manage users with full CRUD operations
+message User {
+  int64 id = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
+  string created_at = 5;
+}
+```
 
-### Sample Operations
-- **View Users**: The application loads with sample users via gRPC
-- **Add User**: Click "Add User" to create a new user via gRPC
-- **Edit User**: Click "Edit" on any user card to update via gRPC
-- **Delete User**: Click "Delete" on any user card to remove via gRPC
-- **Refresh**: Click "Refresh" to reload users from the gRPC server
+All gRPC calls are routed through Envoy proxy at http://localhost:8080
 
-## Technology Stack
+## 🎯 Usage Examples
 
-### Backend
-- **Spring Boot 3.5.4-SNAPSHOT**: Latest Spring framework
-- **Spring gRPC 0.8.0**: Official Spring gRPC integration
-- **Protocol Buffers 4.30.2**: Message serialization
-- **gRPC 1.72.0**: High-performance RPC framework
-- **Maven**: Build and dependency management
+### Frontend (React/TypeScript)
+```typescript
+// Auto-generated client from .proto
+const client = new UserServiceClient('http://localhost:8080');
 
-### Frontend
-- **React 18**: Modern React with functional components
-- **TypeScript**: Type-safe JavaScript
-- **gRPC-Web**: Direct gRPC communication from browser
-- **CSS3**: Modern styling with Grid and Flexbox
-- **Protobuf**: Generated TypeScript client code
+// Type-safe gRPC call
+const request = new GetAllUsersRequest();
+const response = await client.getAllUsers(request, {});
+const users = response.getUsersList();
+```
 
-## Development Notes
+### Backend (Spring Boot/Java)
+```java
+@GrpcService
+public class UserGrpcService extends UserServiceGrpc.UserServiceImplBase {
+    @Override
+    public void getAllUsers(GetAllUsersRequest request, 
+                           StreamObserver<GetAllUsersResponse> responseObserver) {
+        // Implementation
+    }
+}
+```
 
-### Backend Compilation
-The project uses the `io.github.ascopes:protobuf-maven-plugin` to generate Java classes from `.proto` files. Generated classes are placed in `target/generated-sources/protobuf/`.
+## 📈 Benefits of This Architecture
+
+- **Type Safety**: End-to-end type safety from database to UI
+- **Performance**: HTTP/2 multiplexing and binary protocol  
+- **Code Generation**: Automatic client/server stub generation
+- **Future-Proof**: Easy to add streaming, new services, other languages
+- **Developer Experience**: Strong IDE support and tooling
+
+## 🔗 Additional Resources
+
+- **[Protocol Buffers Guide](https://protobuf.dev/)**
+- **[gRPC Documentation](https://grpc.io/docs/)**
+- **[Spring gRPC](https://github.com/grpc-ecosystem/grpc-spring)**
+- **[Envoy Proxy](https://www.envoyproxy.io/docs/)**
+
+## 📝 License
+
+This project is for demonstration purposes.
 
 ### Frontend gRPC Client Generation
 The frontend uses `protoc` with `protoc-gen-grpc-web` to generate TypeScript client code from `.proto` files. Generated files are placed in `src/generated/`.
 
-### Envoy Proxy Configuration
-Envoy acts as a translation layer between the browser and gRPC backend:
-- Receives gRPC-Web requests on port 8080
-- Translates them to standard gRPC calls to backend on port 9090
-- Handles CORS and HTTP/2 requirements
-
-### Spring gRPC Configuration
-The backend uses the official Spring gRPC support with:
-- `@GrpcService` annotation for service implementation
-- Automatic server configuration via Spring Boot starter
-- Integration with Spring's dependency injection
 
 ## Future Enhancements
 
