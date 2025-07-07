@@ -2,14 +2,24 @@
 
 A modern full-stack application demonstrating **pure gRPC communication** between a React frontend and Spring Boot backend, with no REST endpoints. Features type-safe communication using Protocol Buffers and gRPC-Web.
 
-## 🏗️ Architecture
+**🆕 Now with Apollo GraphQL Federation support!** Choose between gRPC-Web or GraphQL for your frontend.
 
+## 🏗️ Architecture Options
+
+### Option 1: gRPC-Web (Original)
 ```
 React App (TypeScript) ←→ Envoy Proxy ←→ Spring Boot (gRPC Server)
     Port 3000              Port 8080         Port 9090
 ```
 
-- **Frontend**: React with TypeScript + gRPC-Web client
+### Option 2: GraphQL Federation (New)
+```
+React App (GraphQL) ←→ Apollo Gateway ←→ GraphQL Service ←→ gRPC Service
+    Port 3000            Port 4000         Port 4001       Port 9090
+```
+
+- **Frontend**: React with TypeScript + Apollo Client or gRPC-Web client
+- **GraphQL Layer**: Apollo Federation Gateway + GraphQL services (optional)
 - **Proxy**: Envoy for gRPC-Web ↔ gRPC translation  
 - **Backend**: Spring Boot with native gRPC server (no web/REST)
 - **Protocol**: 100% gRPC communication with Protocol Buffers
@@ -57,6 +67,38 @@ npm start
 ### 5. Open Application
 Navigate to **http://localhost:3000** and test the user management features.
 
+## 🚀 Apollo GraphQL Federation (Alternative)
+
+For a GraphQL layer on top of your gRPC services:
+
+### Quick Start with Apollo
+```bash
+# One-command setup
+./start-apollo.sh
+```
+
+This starts:
+- **Apollo Gateway**: http://localhost:4000/graphql
+- **User GraphQL Service**: http://localhost:4001/graphql  
+- **Frontend (GraphQL)**: http://localhost:3000
+- **gRPC Backend**: http://localhost:9090
+- **Envoy Proxy**: http://localhost:8080 (for legacy support)
+
+### Manual Apollo Setup
+```bash
+# 1. Start gRPC backend
+cd backend && mvn spring-boot:run
+
+# 2. Start with Docker Compose
+docker-compose -f docker-compose.graphql.yml up --build
+
+# 3. Access services
+open http://localhost:4000/graphql  # Apollo Gateway
+open http://localhost:3000          # GraphQL Frontend
+```
+
+See **[GRAPHQL_API.md](./GRAPHQL_API.md)** for complete GraphQL documentation.
+
 ## 📚 Documentation
 
 - **[INSTRUCTIONS.md](./INSTRUCTIONS.md)** - Comprehensive guide explaining architecture, components, and development workflow
@@ -73,15 +115,36 @@ stream-example/
 │   │   └── resources/         # Application configuration
 │   ├── Dockerfile
 │   └── pom.xml               # Maven dependencies (gRPC, Spring Boot)
-├── frontend/                  # React TypeScript App
+├── frontend/                  # React TypeScript App (gRPC-Web)
 │   ├── src/
 │   │   ├── generated/        # Auto-generated gRPC-Web clients
 │   │   ├── App.tsx          # Main React component
 │   │   └── App.css          # Styling
 │   └── package.json         # npm dependencies (gRPC-Web, React)
+├── apollo-gateway/            # Apollo Federation Gateway
+│   ├── src/index.ts          # Gateway configuration
+│   ├── Dockerfile
+│   └── package.json         # Apollo Gateway dependencies
+├── user-graphql-service/      # GraphQL service wrapping gRPC
+│   ├── src/
+│   │   ├── schema.ts        # GraphQL schema definition
+│   │   ├── resolvers.ts     # GraphQL resolvers
+│   │   └── grpc-client.ts   # gRPC client wrapper
+│   ├── Dockerfile
+│   └── package.json         # GraphQL service dependencies
+├── frontend-graphql/          # React TypeScript App (GraphQL)
+│   ├── src/
+│   │   ├── App.tsx          # GraphQL-powered React component
+│   │   └── index.tsx        # Apollo Client setup
+│   ├── Dockerfile
+│   └── package.json         # Apollo Client dependencies
 ├── envoy.yaml               # Envoy proxy configuration
-├── docker-compose.yml       # Multi-service orchestration
+├── docker-compose.yml       # Original gRPC-Web setup
+├── docker-compose.graphql.yml # Apollo Federation setup
+├── start-apollo.sh          # One-command Apollo setup
 ├── INSTRUCTIONS.md          # Detailed architecture guide
+├── ADDING_APOLLO.md         # Apollo Federation evolution guide
+├── GRAPHQL_API.md          # GraphQL API documentation
 └── README.md               # This file
 ```
 
