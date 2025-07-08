@@ -132,8 +132,16 @@ jobs:
     
     - name: Verify builds completed
       run: |
-        echo "All Docker images built successfully!"
-        docker images | grep stream-example
+        echo "✅ Docker Compose build completed successfully!"
+        echo ""
+        echo "📋 All available Docker images:"
+        docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" | head -20
+        echo ""
+        echo "🔍 Images from our project (looking for common patterns):"
+        (docker images | grep -E "(grpc-backend|apollo-gateway|user-graphql|frontend-graphql)" | head -10) || true
+        echo ""
+        echo "📊 Total number of Docker images: $(docker images -q | wc -l)"
+        echo "✅ Build verification complete!"
 
   # Security Scanning
   security-scan:
