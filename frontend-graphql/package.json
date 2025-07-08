@@ -10,6 +10,7 @@
     "build:watch": "vite build --watch",
     "serve": "vite preview",
     "lint": "eslint .",
+    "test": "echo 'No tests yet - Frontend GraphQL React app' && exit 0",
     "proto:generate": "protoc --plugin=protoc-gen-grpc-web=./node_modules/.bin/protoc-gen-grpc-web --js_out=import_style=commonjs:./src/generated --grpc-web_out=import_style=typescript,mode=grpcwebtext:./src/generated ../backend/src/main/proto/*.proto",
     "graphql:codegen": "graphql-codegen --config codegen.yml"
   },

@@ -1,24 +1,31 @@
 # GraphQL API Documentation
 
-This document describes the GraphQL API that wraps your existing gRPC services using Apollo Federation.
+This document describes the GraphQL Federation API that wraps the existing gRPC backend services using Apollo Federation.
 
-## Architecture
+## Architecture Overview
 
+```mermaid
+graph LR
+    A[Frontend<br/>Apollo Client<br/>Port 3000] -->|GraphQL Queries| B[Apollo Gateway<br/>Port 4000]
+    B -->|Federated Queries| C[User GraphQL Service<br/>Port 4001]
+    C -->|gRPC Calls| D[gRPC Backend<br/>Port 9090]
+    
+    style A fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#311c87,stroke:#333,stroke-width:2px,color:#fff
+    style C fill:#e10098,stroke:#333,stroke-width:2px,color:#fff
+    style D fill:#6db33f,stroke:#333,stroke-width:2px,color:#fff
 ```
-Frontend (GraphQL) → Apollo Gateway → User GraphQL Service → User gRPC Service
-```
 
-## Endpoints
+## API Endpoints
 
-- **Apollo Gateway**: http://localhost:4000/graphql
-- **User GraphQL Service**: http://localhost:4001/graphql
-- **GraphQL Playground**: http://localhost:4000/graphql (in development)
+- **Apollo Gateway**: http://localhost:4000/graphql (unified GraphQL endpoint)
+- **User GraphQL Service**: http://localhost:4001/graphql (federated subgraph)
+- **GraphQL Playground**: http://localhost:4000/graphql (in development mode)
+- **gRPC Backend**: localhost:9090 (internal service communication)
 
-## Schema
+## GraphQL Schema
 
-### Types
-
-#### User
+### User Type
 ```graphql
 type User {
   id: ID!
@@ -29,7 +36,7 @@ type User {
 }
 ```
 
-#### UserRole
+### User Role Enum
 ```graphql
 enum UserRole {
   USER
@@ -38,7 +45,35 @@ enum UserRole {
 }
 ```
 
-### Inputs
+### Query Operations
+```graphql
+type Query {
+  # Get all users
+  users: [User!]!
+  
+  # Get user by ID
+  user(id: ID!): User
+  
+  # Get users by role
+  usersByRole(role: UserRole!): [User!]!
+}
+```
+
+### Mutation Operations
+```graphql
+type Mutation {
+  # Create a new user
+  createUser(input: CreateUserInput!): User!
+  
+  # Update an existing user
+  updateUser(id: ID!, input: UpdateUserInput!): User!
+  
+  # Delete a user
+  deleteUser(id: ID!): DeleteUserResponse!
+}
+```
+
+### Input Types
 
 #### CreateUserInput
 ```graphql
@@ -47,6 +82,52 @@ input CreateUserInput {
   email: String!
   role: UserRole!
 }
+```
+
+#### UpdateUserInput
+```graphql
+input UpdateUserInput {
+  name: String
+  email: String
+  role: UserRole
+}
+```
+
+#### DeleteUserResponse
+```graphql
+type DeleteUserResponse {
+  success: Boolean!
+  message: String!
+}
+```
+
+## Federation Configuration
+
+### Subgraph Schema (User Service)
+```graphql
+# User service participates in Apollo Federation
+extend type Query {
+  users: [User!]!
+  user(id: ID!): User
+}
+
+# User type can be extended by other services
+type User @key(fields: "id") {
+  id: ID!
+  name: String!
+  email: String!
+  role: UserRole!
+  createdAt: String!
+}
+```
+
+### Gateway Composition
+The Apollo Gateway automatically composes the schema from all registered subgraphs:
+```javascript
+const subgraphs = [
+  { name: 'users', url: 'http://user-graphql-service:4001/graphql' },
+  // Additional services can be added here
+];
 ```
 
 #### UpdateUserInput
@@ -284,3 +365,138 @@ If you're migrating from the existing gRPC-Web frontend:
 5. **Replace error handling** with GraphQL error handling
 
 Both systems can run in parallel during migration!
+
+## Advanced Features
+
+### Real-time Updates with Subscriptions
+```graphql
+type Subscription {
+  userCreated: User!
+  userUpdated: User!
+  userDeleted: ID!
+}
+```
+
+Example subscription usage:
+```graphql
+subscription OnUserCreated {
+  userCreated {
+    id
+    name
+    email
+    role
+  }
+}
+```
+
+### Batching and Caching
+Apollo Client provides automatic:
+- **Query batching**: Multiple queries in a single request
+- **Caching**: Intelligent cache management
+- **Deduplication**: Prevents duplicate requests
+
+### Custom Directives
+```graphql
+# Example of custom directive for role-based access
+type User @auth(role: "ADMIN") {
+  id: ID!
+  name: String!
+  email: String!
+  role: UserRole!
+  createdAt: String!
+}
+```
+
+## Performance Considerations
+
+1. **Query Complexity**: Limit query depth and complexity
+2. **Pagination**: Use cursor-based pagination for large datasets
+3. **Field Selection**: Only request needed fields
+4. **Caching Strategy**: Implement proper cache invalidation
+
+## Security Best Practices
+
+1. **Authentication**: Implement JWT authentication
+2. **Authorization**: Role-based access control
+3. **Input Validation**: Validate all inputs
+4. **Rate Limiting**: Prevent abuse with rate limiting
+5. **Query Whitelisting**: Only allow approved queries in production
+
+## Testing
+
+### Unit Tests
+```javascript
+import { createTestClient } from 'apollo-server-testing';
+import { server } from './server';
+
+const { query, mutate } = createTestClient(server);
+
+test('should create user', async () => {
+  const CREATE_USER = gql`
+    mutation CreateUser($input: CreateUserInput!) {
+      createUser(input: $input) {
+        id
+        name
+        email
+      }
+    }
+  `;
+
+  const result = await mutate({
+    mutation: CREATE_USER,
+    variables: {
+      input: {
+        name: 'Test User',
+        email: 'test@example.com',
+        role: 'USER'
+      }
+    }
+  });
+
+  expect(result.data.createUser.name).toBe('Test User');
+});
+```
+
+### Integration Tests
+```bash
+# Run integration tests
+npm run test:integration
+
+# Test specific service
+npm run test:user-service
+```
+
+## Monitoring and Observability
+
+### Apollo Studio Integration
+```javascript
+const { ApolloGateway } = require('@apollo/gateway');
+
+const gateway = new ApolloGateway({
+  serviceList: [
+    { name: 'users', url: 'http://user-graphql-service:4001/graphql' }
+  ],
+  // Apollo Studio configuration
+  __exposeQueryPlanExperimental: false,
+});
+```
+
+### Metrics and Logging
+- **Query Performance**: Track resolver execution time
+- **Error Rates**: Monitor error frequency and types
+- **Usage Patterns**: Analyze query complexity and frequency
+
+## Future Enhancements
+
+1. **Additional Services**: Add Order, Product, Inventory services
+2. **Real-time Features**: WebSocket subscriptions
+3. **Advanced Caching**: Redis caching layer
+4. **Schema Versioning**: Versioned schema management
+5. **Federation V2**: Upgrade to Apollo Federation V2
+
+## Resources
+
+- [Apollo Federation Documentation](https://www.apollographql.com/docs/federation/)
+- [GraphQL Best Practices](https://graphql.org/learn/best-practices/)
+- [Apollo Client Documentation](https://www.apollographql.com/docs/react/)
+- [GraphQL Specification](https://spec.graphql.org/)

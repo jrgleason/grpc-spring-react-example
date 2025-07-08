@@ -213,3 +213,7 @@ pids
 
 # DynamoDB Local files
 .dynamodb/
+
+node_modules
+target
+dist

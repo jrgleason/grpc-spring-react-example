@@ -6,7 +6,9 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node src/index.js"
+    "dev": "node src/index.js",
+    "test": "echo 'No tests yet - Apollo Gateway service' && exit 0",
+    "lint": "echo 'No linting configured - Apollo Gateway service' && exit 0"
   },
   "dependencies": {
     "@apollo/gateway": "latest",

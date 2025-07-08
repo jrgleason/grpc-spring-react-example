@@ -1,20 +1,28 @@
-# gRPC-Web Full-Stack Application Instructions
+# GraphQL Federation Full-Stack Application Instructions
 
-This document explains the architecture, components, and setup process for this gRPC-only full-stack application.
+This document explains the architecture, components, and setup process for this GraphQL Federation full-stack application.
 
 ## Architecture Overview
 
-This application demonstrates a modern gRPC-Web architecture with:
+This application demonstrates a modern GraphQL Federation architecture with:
+- **Frontend**: React with Apollo Client for GraphQL queries
+- **API Gateway**: Apollo Federation Gateway aggregating multiple GraphQL services
+- **Microservices**: Individual GraphQL services that wrap gRPC backend calls
 - **Backend**: Spring Boot with gRPC server (Java 24)
-- **Frontend**: React with TypeScript using gRPC-Web
-- **Proxy**: Envoy proxy for gRPC-Web translation
-- **Protocol**: Only gRPC communication (no REST endpoints)
+- **Proxy**: Envoy proxy for legacy gRPC-Web support
 
-```
-┌─────────────────┐    gRPC-Web     ┌─────────────────┐    gRPC    ┌─────────────────┐
-│   React App     │◄──────────────► │   Envoy Proxy   │◄──────────►│  Spring Boot    │
-│   (Port 3000)   │                 │   (Port 8080)   │            │   (Port 9090)   │
-└─────────────────┘                 └─────────────────┘            └─────────────────┘
+```mermaid
+graph LR
+    A[React App<br/>Port 3000] <-->|GraphQL| B[Apollo Gateway<br/>Port 4000]
+    B <-->|GraphQL| C[User GraphQL Service<br/>Port 4001]
+    C <-->|gRPC| D[Spring Boot Backend<br/>Port 9090]
+    C -.->|Legacy Support| E[Envoy Proxy<br/>Port 8080]
+    
+    style A fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#311c87,stroke:#333,stroke-width:2px,color:#fff
+    style C fill:#e10098,stroke:#333,stroke-width:2px,color:#fff
+    style D fill:#6db33f,stroke:#333,stroke-width:2px,color:#fff
+    style E fill:#ac6199,stroke:#333,stroke-width:2px,color:#fff
 ```
 
 ## Why Each Component is Needed
@@ -22,9 +30,9 @@ This application demonstrates a modern gRPC-Web architecture with:
 ### 1. Spring Boot Backend (Port 9090)
 **Purpose**: Serves as the gRPC server that handles business logic and data operations.
 
-**Why gRPC instead of REST**:
+**Why gRPC for Internal Communication**:
 - Type-safe communication with Protocol Buffers
-- Better performance with HTTP/2
+- Better performance with HTTP/2 for service-to-service communication
 - Automatic code generation for multiple languages
 - Built-in streaming capabilities
 - Strong contract definition with .proto files
@@ -34,84 +42,263 @@ This application demonstrates a modern gRPC-Web architecture with:
 - `backend/src/main/java/org/jrg/grpc/service/UserGrpcService.java` - Service implementation
 - `backend/src/main/resources/application.properties` - gRPC configuration
 
-### 2. Envoy Proxy (Port 8080)
-**Purpose**: Acts as a translation layer between gRPC-Web (browser) and gRPC (backend).
+### 2. User GraphQL Service (Port 4001)
+**Purpose**: Wraps the gRPC backend with a GraphQL API and participates in Apollo Federation.
 
-**Why Envoy is Essential**:
-- Browsers cannot speak native gRPC protocol
-- gRPC requires HTTP/2, which has limited browser support for bidirectional streaming
-- gRPC-Web is a browser-compatible subset of gRPC
-- Envoy translates gRPC-Web requests to native gRPC calls
-- Handles CORS headers for cross-origin requests
+**Why GraphQL Layer**:
+- Provides a unified, client-friendly API
+- Supports Apollo Federation for schema composition
+- Enables flexible queries and better developer experience
+- Abstracts underlying gRPC complexity from frontend
+
+**Key Files**:
+- `user-graphql-service/src/index.js` - GraphQL service server
+- `user-graphql-service/src/schema.js` - GraphQL schema definition
+- `user-graphql-service/src/resolvers.js` - GraphQL resolvers
+- `user-graphql-service/src/grpc-client.js` - gRPC client for backend communication
+
+### 3. Apollo Gateway (Port 4000)
+**Purpose**: Aggregates multiple GraphQL services into a single federated schema.
+
+**Why Apollo Federation**:
+- Enables microservices architecture with unified GraphQL API
+- Allows teams to work on separate services independently
+- Provides schema composition and type merging
+- Supports distributed GraphQL across multiple services
+
+**Key Files**:
+- `apollo-gateway/src/index.js` - Gateway server configuration
+- `docker-compose.graphql.yml` - Full stack deployment
+
+### 4. Envoy Proxy (Port 8080)
+**Purpose**: Provides legacy gRPC-Web support for direct backend communication if needed.
+
+**Why Envoy is Available**:
+- Maintains backward compatibility with gRPC-Web clients
+- Handles CORS for cross-origin requests
+- Provides fallback option for direct backend access
+- Supports gradual migration strategies
 
 **Key Files**:
 - `envoy.yaml` - Envoy configuration with gRPC-Web filter and CORS settings
 
-### 3. React Frontend (Port 3000)
-**Purpose**: Provides the user interface that communicates via gRPC-Web.
+### 5. React Frontend (Port 3000)
+**Purpose**: Provides the user interface using Apollo Client for GraphQL queries.
 
-**Why gRPC-Web**:
-- Type-safe client generation from .proto files
-- Better than REST for complex data structures
-- Automatic serialization/deserialization
-- Built-in error handling
-- Future-proof for adding streaming features
+**Why Apollo Client instead of gRPC-Web**:
+- Single GraphQL endpoint for all data needs
+- Automatic query optimization and caching
+- Better developer experience with GraphQL tooling
+- Flexible querying capabilities
+- Type-safe operations with code generation
 
 **Key Files**:
-- `frontend/src/generated/` - Auto-generated TypeScript clients
-- `frontend/src/App.tsx` - Main React component using gRPC client
+- `frontend-graphql/src/` - React components using Apollo Client
+- `frontend-graphql/src/graphql/` - GraphQL queries and mutations
+- `frontend-graphql/package.json` - Apollo Client dependencies
 
-## Component Deep Dive
+## Development Workflow
 
-### Backend Configuration
+### Starting the Full Stack
 
-#### Maven Dependencies (`backend/pom.xml`)
-```xml
-<!-- Spring gRPC Server -->
-<dependency>
-    <groupId>org.springframework.grpc</groupId>
-    <artifactId>spring-grpc-server-spring-boot-starter</artifactId>
-</dependency>
+#### Option 1: Docker Compose (Recommended)
+```bash
+# Start the entire GraphQL Federation stack
+docker-compose -f docker-compose.graphql.yml up --build
 
-<!-- gRPC Services -->
-<dependency>
-    <groupId>io.grpc</groupId>
-    <artifactId>grpc-services</artifactId>
-</dependency>
+# Services available at:
+# - Frontend: http://localhost:3000
+# - Apollo Gateway: http://localhost:4000/graphql
+# - User GraphQL Service: http://localhost:4001/graphql
+# - gRPC Backend: localhost:9090
+# - Envoy Proxy: http://localhost:8080 (legacy support)
 ```
 
-#### Application Properties
-```properties
-# gRPC server configuration
-grpc.server.port=9090
-grpc.server.reflection-service-enabled=true
+#### Option 2: Manual Development Setup
+```bash
+# Terminal 1: Start Backend
+cd backend
+./mvnw spring-boot:run
 
-# No web server needed (gRPC only)
-# spring.main.web-application-type=none  # Commented out to allow actuator
+# Terminal 2: Start User GraphQL Service
+cd user-graphql-service
+npm install
+npm start
+
+# Terminal 3: Start Apollo Gateway
+cd apollo-gateway
+npm install
+npm start
+
+# Terminal 4: Start Frontend
+cd frontend-graphql
+npm install
+npm start
+
+# Terminal 5: Start Envoy (if needed)
+docker run -p 8080:8080 -v $(pwd)/envoy.yaml:/etc/envoy/envoy.yaml envoyproxy/envoy:v1.22.0
 ```
 
-#### Service Implementation
-The `@GrpcService` annotation registers the service with Spring's gRPC server:
-```java
-@GrpcService
-public class UserGrpcService extends UserServiceGrpc.UserServiceImplBase {
-    // Implementation of proto-defined methods
-}
+### Adding New GraphQL Services
+
+1. **Create New Service**:
+   ```bash
+   mkdir new-service-graphql
+   cd new-service-graphql
+   npm init -y
+   npm install @apollo/subgraph graphql apollo-server-express
+   ```
+
+2. **Implement Federated Schema**:
+   ```javascript
+   // new-service-graphql/src/schema.js
+   import { buildSubgraphSchema } from '@apollo/subgraph';
+   import { gql } from 'apollo-server-express';
+   
+   const typeDefs = gql`
+     extend type Query {
+       newServiceOperation: String
+     }
+   `;
+   
+   const resolvers = {
+     Query: {
+       newServiceOperation: () => "Hello from new service"
+     }
+   };
+   
+   export const schema = buildSubgraphSchema({ typeDefs, resolvers });
+   ```
+
+3. **Update Apollo Gateway**:
+   ```javascript
+   // apollo-gateway/src/index.js
+   const subgraphs = [
+     { name: 'users', url: 'http://user-graphql-service:4001/graphql' },
+     { name: 'newservice', url: 'http://new-service-graphql:4002/graphql' },
+   ];
+   ```
+
+4. **Update Docker Compose**:
+   ```yaml
+   # docker-compose.graphql.yml
+   new-service-graphql:
+     build: ./new-service-graphql
+     ports:
+       - "4002:4002"
+     environment:
+       - PORT=4002
+   ```
+
+### Testing the GraphQL Federation
+
+1. **Apollo Gateway Playground**:
+   - Open http://localhost:4000/graphql
+   - Use GraphQL Playground to test queries across services
+
+2. **Individual Service Testing**:
+   ```bash
+   # Test user service directly
+   curl -X POST http://localhost:4001/graphql \
+     -H "Content-Type: application/json" \
+     -d '{"query": "{ users { id name email } }"}'
+   ```
+
+3. **Frontend Integration**:
+   ```bash
+   # Check frontend GraphQL queries
+   cd frontend-graphql
+   npm run codegen  # Generate TypeScript types from GraphQL schema
+   ```
+
+## CI/CD Pipeline
+
+The project includes a GitHub Actions workflow that:
+- Builds and tests all Node.js services
+- Builds and tests the Java backend
+- Runs integration tests across services
+- Performs security scanning
+- Builds and pushes Docker images
+
+**Key Files**:
+- `.github/workflows/ci-cd.yml` - Main CI/CD pipeline
+- `.github/workflows/README.md` - Pipeline documentation
+
+## Protocol Buffer Integration
+
+While the frontend uses GraphQL, the backend services still communicate via gRPC:
+
+1. **Proto File Changes**:
+   ```bash
+   # Backend (automatic with Maven)
+   cd backend
+   mvn clean compile  # Regenerates Java classes
+   
+   # GraphQL Service
+   cd user-graphql-service
+   npm run proto:generate  # If using protoc directly
+   ```
+
+2. **Schema Updates**:
+   - Update `.proto` files in `backend/src/main/proto/`
+   - Regenerate gRPC clients in GraphQL services
+   - Update GraphQL schema to match new proto definitions
+   - Update resolvers to handle new fields/operations
+
+## Monitoring and Debugging
+
+### GraphQL Federation Debugging
+```bash
+# Check gateway schema composition
+curl http://localhost:4000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ _service { sdl } }"}'
+
+# Check service health
+curl http://localhost:4001/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ __typename }"}'
 ```
 
-### Envoy Configuration (`envoy.yaml`)
+### Backend gRPC Debugging
+```bash
+# Test gRPC services directly
+grpcurl -plaintext localhost:9090 list
+grpcurl -plaintext localhost:9090 org.jrg.grpc.UserService/GetAllUsers
+```
 
-#### Key Sections Explained:
+### Common Issues
+- **Schema conflicts**: Ensure type names don't conflict across services
+- **Service discovery**: Verify all services are reachable by Apollo Gateway
+- **gRPC connectivity**: Check that GraphQL services can reach gRPC backend
+- **Apollo Federation**: Ensure `@apollo/subgraph` is used correctly
 
-1. **HTTP Connection Manager**: Handles incoming HTTP requests
-2. **gRPC-Web Filter**: Converts gRPC-Web to gRPC
-3. **CORS Filter**: Enables cross-origin requests from React
-4. **Router Filter**: Routes requests to backend cluster
+## Production Considerations
 
-```yaml
-# Critical: Backend cluster configuration
-clusters:
-- name: grpc_service
+1. **Schema Registry**: Use Apollo Studio for schema management
+2. **Caching**: Implement Redis for Apollo Gateway caching
+3. **Monitoring**: Add Apollo Studio metrics and tracing
+4. **Security**: Implement authentication/authorization across services
+5. **Scaling**: Use Kubernetes for service orchestration
+
+## Benefits of This Architecture
+
+1. **Unified API**: Single GraphQL endpoint for all client needs
+2. **Microservices**: Independent service development and deployment
+3. **Type Safety**: End-to-end type safety from database to UI
+4. **Performance**: Efficient queries with GraphQL and fast gRPC backend
+5. **Developer Experience**: Great tooling and introspection capabilities
+6. **Scalability**: Easy to add new services and scale independently
+
+## Migration from gRPC-Web
+
+If you have existing gRPC-Web clients, you can migrate gradually:
+
+1. **Phase 1**: Add GraphQL layer while keeping gRPC-Web support
+2. **Phase 2**: Migrate frontend components to use GraphQL
+3. **Phase 3**: Remove gRPC-Web dependencies once migration is complete
+
+The Envoy proxy provides backward compatibility during the migration period.
   connect_timeout: 0.25s
   type: logical_dns
   http2_protocol_options: {}  # Enable HTTP/2 for gRPC

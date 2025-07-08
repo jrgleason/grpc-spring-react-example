@@ -1,193 +1,317 @@
-# gRPC-Web Full-Stack Application
+# Full-Stack GraphQL Federation with gRPC Backend
 
-A modern full-stack application demonstrating **pure gRPC communication** between a React frontend and Spring Boot backend, with no REST endpoints. Features type-safe communication using Protocol Buffers and gRPC-Web.
+A modern **GraphQL Federation** architecture demonstrating microservices communication with a **gRPC backend**. Features Apollo Gateway, federated GraphQL services, and type-safe communication using Protocol Buffers.
 
-**🆕 Now with Apollo GraphQL Federation support!** Choose between gRPC-Web or GraphQL for your frontend.
+**🆕 Production-ready with CI/CD pipeline and Docker deployment!**
 
-## 🏗️ Architecture Options
+## 🏗️ Architecture
 
-### Option 1: gRPC-Web (Original)
+```mermaid
+graph LR
+    A[React App<br/>Apollo Client<br/>Port 3000] <-->|GraphQL| B[Apollo Gateway<br/>Port 4000]
+    B <-->|Federated<br/>GraphQL| C[User GraphQL Service<br/>Port 4001]
+    C <-->|gRPC| D[Spring Boot Backend<br/>Port 9090]
+    C -.->|Legacy<br/>Support| E[Envoy Proxy<br/>Port 8080]
+    
+    style A fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#311c87,stroke:#333,stroke-width:2px,color:#fff
+    style C fill:#e10098,stroke:#333,stroke-width:2px,color:#fff
+    style D fill:#6db33f,stroke:#333,stroke-width:2px,color:#fff
+    style E fill:#ac6199,stroke:#333,stroke-width:2px,color:#fff
 ```
-React App (TypeScript) ←→ Envoy Proxy ←→ Spring Boot (gRPC Server)
-    Port 3000              Port 8080         Port 9090
-```
 
-### Option 2: GraphQL Federation (New)
-```
-React App (GraphQL) ←→ Apollo Gateway ←→ GraphQL Service ←→ gRPC Service
-    Port 3000            Port 4000         Port 4001       Port 9090
-```
-
-- **Frontend**: React with TypeScript + Apollo Client or gRPC-Web client
-- **GraphQL Layer**: Apollo Federation Gateway + GraphQL services (optional)
-- **Proxy**: Envoy for gRPC-Web ↔ gRPC translation  
-- **Backend**: Spring Boot with native gRPC server (no web/REST)
-- **Protocol**: 100% gRPC communication with Protocol Buffers
+- **Frontend**: React with Apollo Client (GraphQL)
+- **API Gateway**: Apollo Federation Gateway (port 4000)
+- **Microservice**: User GraphQL Service (port 4001) 
+- **Backend**: Spring Boot gRPC Server (port 9090)
+- **Proxy**: Envoy for legacy gRPC-Web support (port 8080)
+- **Protocol**: GraphQL over HTTP + gRPC with Protocol Buffers
 
 ## 📋 Prerequisites
 
 - **Java 24+** (for Spring Boot backend)
-- **Node.js 18+** (for React frontend)
-- **Docker** (for Envoy proxy)
+- **Node.js 18+** (for GraphQL services and frontend)
+- **Docker & Docker Compose** (for containerized deployment)
 - **Maven** (for backend build)
-- **protoc** (Protocol Buffer compiler) - installed via npm
 
 ## 🚀 Quick Start
 
-### 1. Clone and Setup
+### Option 1: Docker Compose (Recommended)
 ```bash
 git clone <repository>
 cd stream-example
-```
 
-### 2. Start Backend (Terminal 1)
-```bash
-cd backend
-mvn spring-boot:run
-# Backend starts on port 9090
-```
-
-### 3. Start Envoy Proxy (Terminal 2)
-```bash
-# From project root
-docker run -it --rm -p 8080:8080 -p 9901:9901 \
-  -v $(pwd)/envoy.yaml:/etc/envoy/envoy.yaml \
-  envoyproxy/envoy:v1.28-latest -c /etc/envoy/envoy.yaml
-# Envoy starts on port 8080
-```
-
-### 4. Start Frontend (Terminal 3)
-```bash
-cd frontend
-npm install
-npm start
-# Frontend starts on port 3000
-```
-
-### 5. Open Application
-Navigate to **http://localhost:3000** and test the user management features.
-
-## 🚀 Apollo GraphQL Federation (Alternative)
-
-For a GraphQL layer on top of your gRPC services:
-
-### Quick Start with Apollo
-```bash
-# One-command setup
-./start-apollo.sh
-```
-
-This starts:
-- **Apollo Gateway**: http://localhost:4000/graphql
-- **User GraphQL Service**: http://localhost:4001/graphql  
-- **Frontend (GraphQL)**: http://localhost:3000
-- **gRPC Backend**: http://localhost:9090
-- **Envoy Proxy**: http://localhost:8080 (for legacy support)
-
-### Manual Apollo Setup
-```bash
-# 1. Start gRPC backend
-cd backend && mvn spring-boot:run
-
-# 2. Start with Docker Compose
+# Start entire stack with one command
 docker-compose -f docker-compose.graphql.yml up --build
 
-# 3. Access services
-open http://localhost:4000/graphql  # Apollo Gateway
-open http://localhost:3000          # GraphQL Frontend
+# Services will be available at:
+# Frontend: http://localhost:3000
+# Apollo Gateway: http://localhost:4000/graphql
+# User Service: http://localhost:4001/graphql
+# gRPC Backend: grpc://localhost:9090
 ```
 
-See **[GRAPHQL_API.md](./GRAPHQL_API.md)** for complete GraphQL documentation.
+### Option 2: Development Setup
+```bash
+# 1. Start gRPC Backend (Terminal 1)
+cd backend
+./mvnw spring-boot:run
+
+# 2. Start User GraphQL Service (Terminal 2)
+cd user-graphql-service
+npm install && npm start
+
+# 3. Start Apollo Gateway (Terminal 3)
+cd apollo-gateway
+npm install && npm start
+
+# 4. Start Frontend (Terminal 4)
+cd frontend-graphql
+npm install && npm start
+```
+
+## 🧪 Testing the Application
+
+### GraphQL Playground
+- **Apollo Gateway**: http://localhost:4000/graphql
+- **User Service**: http://localhost:4001/graphql
+
+### Sample Queries
+```graphql
+# Get all users
+query GetUsers {
+  users {
+    id
+    name
+    email
+    role
+    createdAt
+  }
+}
+
+# Create a user
+mutation CreateUser {
+  createUser(name: "John Doe", email: "john@example.com", role: "USER") {
+    id
+    name
+    email
+  }
+}
+```
+
+### Health Checks
+```bash
+curl http://localhost:4000/health  # Gateway health
+curl http://localhost:4001/health  # User service health
+curl http://localhost:3000         # Frontend
+```
+## 🚀 CI/CD Pipeline
+
+This project includes a comprehensive **GitHub Actions workflow** for automated testing and deployment:
+
+### Pipeline Stages
+1. **Backend Testing** - Maven tests for Spring Boot gRPC service
+2. **Node.js Services Testing** - Matrix testing for all GraphQL services and frontend
+3. **Integration Testing** - Full Docker Compose stack testing with health checks
+4. **Security Scanning** - Trivy vulnerability scanning
+5. **Build & Push** - Docker image building (ready for registry)
+6. **Deploy** - Staging deployment (configurable)
+
+### Features
+- ✅ **Automated testing** on every push and pull request
+- ✅ **Docker multi-stage builds** for optimized images
+- ✅ **Dependency caching** for faster builds
+- ✅ **Health checks** for all services
+- ✅ **Security scanning** with results in GitHub Security tab
+- ✅ **Matrix strategy** for testing multiple services efficiently
+
+See **[.github/workflows/README.md](.github/workflows/README.md)** for complete CI/CD documentation.
 
 ## 📚 Documentation
 
-- **[INSTRUCTIONS.md](./INSTRUCTIONS.md)** - Comprehensive guide explaining architecture, components, and development workflow
-- **[Docker Setup](#docker-alternative)** - Alternative Docker Compose setup
+- **[CI/CD Pipeline](.github/workflows/README.md)** - GitHub Actions workflow documentation
+- **[GraphQL API](./docs/GRAPHQL_API.md)** - Complete GraphQL API reference
+- **[Architecture Guide](./docs/INSTRUCTIONS.md)** - Detailed architecture explanation
+- **[Migration Guide](./docs/ADDING_APOLLO.md)** - How we evolved from gRPC-Web to GraphQL
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 stream-example/
-├── backend/                    # Spring Boot gRPC Server
+├── .github/workflows/         # CI/CD Pipeline
+│   ├── ci-cd.yml             # Main workflow
+│   └── README.md             # Pipeline documentation
+├── backend/                  # Spring Boot gRPC Server (Java 24)
 │   ├── src/main/
-│   │   ├── java/              # Service implementations
-│   │   ├── proto/             # Protocol Buffer definitions (.proto)
-│   │   └── resources/         # Application configuration
-│   ├── Dockerfile
-│   └── pom.xml               # Maven dependencies (gRPC, Spring Boot)
-├── frontend/                  # React TypeScript App (gRPC-Web)
+│   │   ├── java/            # gRPC service implementations
+│   │   ├── proto/           # Protocol Buffer definitions
+│   │   └── resources/       # Application configuration
+│   ├── Dockerfile           # Multi-stage Docker build
+│   └── pom.xml             # Maven dependencies
+├── apollo-gateway/          # Apollo Federation Gateway (Node.js)
+│   ├── src/index.js        # Gateway configuration
+│   ├── Dockerfile          # Gateway container
+│   └── package.json        # Gateway dependencies
+├── user-graphql-service/    # GraphQL Microservice (Node.js)
 │   ├── src/
-│   │   ├── generated/        # Auto-generated gRPC-Web clients
-│   │   ├── App.tsx          # Main React component
-│   │   └── App.css          # Styling
-│   └── package.json         # npm dependencies (gRPC-Web, React)
-├── apollo-gateway/            # Apollo Federation Gateway
-│   ├── src/index.ts          # Gateway configuration
-│   ├── Dockerfile
-│   └── package.json         # Apollo Gateway dependencies
-├── user-graphql-service/      # GraphQL service wrapping gRPC
+│   │   ├── schema.js       # GraphQL schema
+│   │   ├── resolvers.js    # GraphQL resolvers
+│   │   └── grpc-client.js  # gRPC client integration
+│   ├── Dockerfile          # Service container
+│   └── package.json        # Service dependencies
+├── frontend-graphql/        # React Frontend (JavaScript + Vite)
 │   ├── src/
-│   │   ├── schema.ts        # GraphQL schema definition
-│   │   ├── resolvers.ts     # GraphQL resolvers
-│   │   └── grpc-client.ts   # gRPC client wrapper
-│   ├── Dockerfile
-│   └── package.json         # GraphQL service dependencies
-├── frontend-graphql/          # React TypeScript App (GraphQL)
-│   ├── src/
-│   │   ├── App.tsx          # GraphQL-powered React component
-│   │   └── index.tsx        # Apollo Client setup
-│   ├── Dockerfile
-│   └── package.json         # Apollo Client dependencies
-├── envoy.yaml               # Envoy proxy configuration
-├── docker-compose.yml       # Original gRPC-Web setup
-├── docker-compose.graphql.yml # Apollo Federation setup
-├── start-apollo.sh          # One-command Apollo setup
-├── INSTRUCTIONS.md          # Detailed architecture guide
-├── ADDING_APOLLO.md         # Apollo Federation evolution guide
-├── GRAPHQL_API.md          # GraphQL API documentation
+│   │   ├── App.jsx         # Main React component
+│   │   └── index.jsx       # Apollo Client setup
+│   ├── Dockerfile          # Frontend container
+│   └── package.json        # Frontend dependencies
+├── docs/                   # Documentation
+│   ├── GRAPHQL_API.md      # GraphQL API reference
+│   ├── INSTRUCTIONS.md     # Architecture guide
+│   └── ADDING_APOLLO.md    # Migration documentation
+├── docker-compose.graphql.yml # GraphQL federation stack
+├── envoy.yaml              # Envoy proxy configuration (legacy)
 └── README.md               # This file
 ```
 
 ## ✨ Key Features
 
 ### 🔧 Backend (Spring Boot + gRPC)
-- Pure gRPC server (no REST/web endpoints)
-- Spring Boot 3.5 with official gRPC support
-- Type-safe Protocol Buffer definitions
-- UserService with full CRUD operations
-- Automatic Java code generation from .proto
+- **Pure gRPC server** (no REST/web endpoints)
+- **Spring Boot 3.5** with Spring gRPC integration
+- **Java 24** with modern language features
+- **Type-safe Protocol Buffers** for service definitions
+- **Multi-stage Docker builds** for optimized containers
+- **Health checks** and service reflection enabled
 
-### 🎨 Frontend (React + gRPC-Web)
-- Modern React 18 with TypeScript
-- Type-safe gRPC-Web client
-- Auto-generated client code from .proto
-- Responsive Material-inspired UI
-- Real-time communication
+### 🌐 GraphQL Federation (Apollo)
+- **Apollo Federation Gateway** for unified API
+- **Federated microservices** architecture
+- **GraphQL to gRPC translation** layer
+- **Type-safe schema composition**
+- **Health monitoring** for all services
 
-### 🔀 Envoy Proxy
-- gRPC-Web ↔ gRPC protocol translation
-- CORS handling for browser requests
-- HTTP/2 and connection management
-- Request/response logging
+### 🎨 Frontend (React + Apollo Client)
+- **Modern React 18** with JavaScript (Vite)
+- **Apollo Client** for GraphQL state management
+- **Real-time queries and mutations**
+- **Responsive Material-inspired UI**
+- **Optimized Vite builds**
+
+### � DevOps & CI/CD
+- **GitHub Actions pipeline** with comprehensive testing
+- **Docker Compose** for local development
+- **Multi-stage builds** for production optimization
+- **Security scanning** with Trivy
+- **Health checks** and integration testing
 
 ## 🛠️ Development
 
-### Code Generation Workflow
-When you modify `user_service.proto`:
-
-1. **Backend**: Maven auto-generates Java classes on build
-2. **Frontend**: Run `npm run proto:generate` for TypeScript clients
-
-### Environment Setup
+### Local Development Workflow
 ```bash
-# Backend dependencies
-mvn clean install
+# Start backend only
+cd backend && ./mvnw spring-boot:run
 
-# Frontend dependencies  
-cd frontend && npm install
+# Start GraphQL services
+cd user-graphql-service && npm run dev
+cd apollo-gateway && npm run dev
 
-# Install Protocol Buffer compiler (if needed)
-npm install -g protoc
+# Start frontend with hot reload
+cd frontend-graphql && npm start
+```
+
+### Code Generation
+Protocol Buffer changes automatically trigger:
+- **Java code generation** (Maven compile)
+- **gRPC service stubs** (Spring gRPC)
+
+### Testing
+```bash
+# Backend tests
+cd backend && ./mvnw test
+
+# Integration tests with Docker
+docker-compose -f docker-compose.graphql.yml up --build
+
+# Manual GraphQL testing
+curl -X POST http://localhost:4000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query":"{ users { id name email } }"}'
+```
+
+## 🐋 Docker Deployment
+
+### Production Build
+```bash
+# Build all services
+docker-compose -f docker-compose.graphql.yml build
+
+# Start in production mode
+docker-compose -f docker-compose.graphql.yml up -d
+
+# Check service health
+curl http://localhost:4000/health
+curl http://localhost:4001/health
+curl http://localhost:3000
+```
+
+### Multi-Stage Builds
+All services use optimized multi-stage Docker builds:
+- **Backend**: Java build stage + runtime stage
+- **Node.js Services**: Dependency caching + production builds
+- **Frontend**: Vite build + Nginx serving
+
+## 🧪 API Examples
+
+### GraphQL Queries
+```graphql
+# Fetch all users
+query GetAllUsers {
+  users {
+    id
+    name
+    email
+    role
+    createdAt
+  }
+}
+
+# Create new user
+mutation CreateUser {
+  createUser(
+    name: "Jane Smith"
+    email: "jane@example.com"
+    role: "ADMIN"
+  ) {
+    id
+    name
+    email
+    role
+  }
+}
+
+# Update existing user
+mutation UpdateUser {
+  updateUser(
+    id: "1"
+    name: "Updated Name"
+    email: "updated@example.com"
+  ) {
+    id
+    name
+    email
+  }
+}
+```
+
+### gRPC Testing (Advanced)
+```bash
+# Using grpcurl for direct gRPC testing
+grpcurl -plaintext localhost:9090 list
+grpcurl -plaintext localhost:9090 org.jrg.grpc.UserService/GetAllUsers
+
+# Test gRPC with JSON
+grpcurl -plaintext -d '{}' localhost:9090 org.jrg.grpc.UserService/GetAllUsers
 ```
 
 ## Docker Alternative
