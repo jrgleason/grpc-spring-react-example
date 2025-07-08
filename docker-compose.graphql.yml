@@ -14,21 +14,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # Existing Envoy Proxy (for legacy gRPC-Web support)
-  envoy:
-    image: envoyproxy/envoy:v1.28-latest
-    ports:
-      - "8080:8080"
-      - "9901:9901"
-    volumes:
-      - ./envoy.yaml:/etc/envoy/envoy.yaml
-    command: /usr/local/bin/envoy -c /etc/envoy/envoy.yaml -l debug
-    depends_on:
-      - grpc-backend
-    networks:
-      - service-mesh
-
-  # New User GraphQL Service (wraps gRPC)
+  # User GraphQL Service (wraps gRPC)
   user-graphql-service:
     build: ./user-graphql-service
     ports:

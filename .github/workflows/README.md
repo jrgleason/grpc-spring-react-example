@@ -17,8 +17,9 @@ The CI/CD pipeline consists of several jobs that run on every push to `main`/`de
   - `apollo-gateway` - Apollo Federation Gateway
   - `user-graphql-service` - GraphQL service wrapping gRPC
   - `frontend-graphql` - React frontend application
+- Matrix testing across Node.js versions 22 and 24
 - Runs linting, testing, and building for each service
-- Uses Node.js 18 with npm cache
+- Uses Node.js with npm cache
 
 ### 3. Integration Testing (`integration-test`)
 - Builds all Docker images using `docker-compose.graphql.yml`

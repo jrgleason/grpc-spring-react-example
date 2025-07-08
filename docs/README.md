@@ -51,7 +51,7 @@ docker-compose -f docker-compose.graphql.yml up --build
 ### Manual Development
 ```bash
 # See INSTRUCTIONS.md for detailed manual setup
-cd backend && ./mvnw spring-boot:run          # Terminal 1
+cd backend && mvn spring-boot:run          # Terminal 1
 cd user-graphql-service && npm start          # Terminal 2  
 cd apollo-gateway && npm start                # Terminal 3
 cd frontend-graphql && npm start              # Terminal 4
@@ -64,13 +64,11 @@ graph LR
     A[React App<br/>Apollo Client<br/>Port 3000] <-->|GraphQL| B[Apollo Gateway<br/>Port 4000]
     B <-->|Federated<br/>GraphQL| C[User GraphQL Service<br/>Port 4001]
     C <-->|gRPC| D[Spring Boot Backend<br/>Port 9090]
-    C -.->|Legacy<br/>Support| E[Envoy Proxy<br/>Port 8080]
     
     style A fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
     style B fill:#311c87,stroke:#333,stroke-width:2px,color:#fff
     style C fill:#e10098,stroke:#333,stroke-width:2px,color:#fff
     style D fill:#6db33f,stroke:#333,stroke-width:2px,color:#fff
-    style E fill:#ac6199,stroke:#333,stroke-width:2px,color:#fff
 ```
 
 ## 📋 Technology Stack
@@ -81,7 +79,6 @@ graph LR
 | **API Gateway** | Apollo Federation | Schema composition and routing |
 | **GraphQL Service** | Express + Apollo Server | gRPC wrapper with GraphQL API |
 | **Backend** | Spring Boot + gRPC | Business logic and data operations |
-| **Proxy** | Envoy | Legacy gRPC-Web support |
 | **CI/CD** | GitHub Actions | Automated testing and deployment |
 | **Containers** | Docker + Docker Compose | Service orchestration |
 

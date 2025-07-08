@@ -2,6 +2,23 @@
 
 This document explains the architecture, components, and setup process for this GraphQL Federation full-stack application.
 
+## Prerequisites
+
+Before running this application, ensure you have the following installed:
+
+- **Java 24+** - Required for the Spring Boot backend
+- **Maven 3.9+** - Required for building the backend (must be installed system-wide)
+- **Node.js 22+** - Required for GraphQL services and frontend (supports Node.js 24)
+- **Docker & Docker Compose** - Required for containerized deployment
+
+> **Maven Installation**: This project requires Maven to be installed on your system. The Maven Wrapper (`mvnw`) is not used.
+> 
+> **Install Maven**:
+> - **macOS**: `brew install maven`
+> - **Ubuntu/Debian**: `sudo apt install maven`  
+> - **Windows**: Download from [maven.apache.org](https://maven.apache.org/install.html)
+> - **Manual**: Follow instructions at [maven.apache.org/install.html](https://maven.apache.org/install.html)
+
 ## Architecture Overview
 
 This application demonstrates a modern GraphQL Federation architecture with:
@@ -9,14 +26,12 @@ This application demonstrates a modern GraphQL Federation architecture with:
 - **API Gateway**: Apollo Federation Gateway aggregating multiple GraphQL services
 - **Microservices**: Individual GraphQL services that wrap gRPC backend calls
 - **Backend**: Spring Boot with gRPC server (Java 24)
-- **Proxy**: Envoy proxy for legacy gRPC-Web support
 
 ```mermaid
 graph LR
     A[React App<br/>Port 3000] <-->|GraphQL| B[Apollo Gateway<br/>Port 4000]
     B <-->|GraphQL| C[User GraphQL Service<br/>Port 4001]
     C <-->|gRPC| D[Spring Boot Backend<br/>Port 9090]
-    C -.->|Legacy Support| E[Envoy Proxy<br/>Port 8080]
     
     style A fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
     style B fill:#311c87,stroke:#333,stroke-width:2px,color:#fff
@@ -70,22 +85,10 @@ graph LR
 - `apollo-gateway/src/index.js` - Gateway server configuration
 - `docker-compose.graphql.yml` - Full stack deployment
 
-### 4. Envoy Proxy (Port 8080)
-**Purpose**: Provides legacy gRPC-Web support for direct backend communication if needed.
-
-**Why Envoy is Available**:
-- Maintains backward compatibility with gRPC-Web clients
-- Handles CORS for cross-origin requests
-- Provides fallback option for direct backend access
-- Supports gradual migration strategies
-
-**Key Files**:
-- `envoy.yaml` - Envoy configuration with gRPC-Web filter and CORS settings
-
-### 5. React Frontend (Port 3000)
+### 4. React Frontend (Port 3000)
 **Purpose**: Provides the user interface using Apollo Client for GraphQL queries.
 
-**Why Apollo Client instead of gRPC-Web**:
+**Why Apollo Client**:
 - Single GraphQL endpoint for all data needs
 - Automatic query optimization and caching
 - Better developer experience with GraphQL tooling
@@ -111,14 +114,13 @@ docker-compose -f docker-compose.graphql.yml up --build
 # - Apollo Gateway: http://localhost:4000/graphql
 # - User GraphQL Service: http://localhost:4001/graphql
 # - gRPC Backend: localhost:9090
-# - Envoy Proxy: http://localhost:8080 (legacy support)
 ```
 
 #### Option 2: Manual Development Setup
 ```bash
 # Terminal 1: Start Backend
 cd backend
-./mvnw spring-boot:run
+mvn spring-boot:run
 
 # Terminal 2: Start User GraphQL Service
 cd user-graphql-service
@@ -134,9 +136,6 @@ npm start
 cd frontend-graphql
 npm install
 npm start
-
-# Terminal 5: Start Envoy (if needed)
-docker run -p 8080:8080 -v $(pwd)/envoy.yaml:/etc/envoy/envoy.yaml envoyproxy/envoy:v1.22.0
 ```
 
 ### Adding New GraphQL Services
@@ -294,57 +293,11 @@ grpcurl -plaintext localhost:9090 org.jrg.grpc.UserService/GetAllUsers
 
 If you have existing gRPC-Web clients, you can migrate gradually:
 
-1. **Phase 1**: Add GraphQL layer while keeping gRPC-Web support
-2. **Phase 2**: Migrate frontend components to use GraphQL
-3. **Phase 3**: Remove gRPC-Web dependencies once migration is complete
+1. **Phase 1**: Add GraphQL layer while keeping existing gRPC services
+2. **Phase 2**: Migrate frontend components to use GraphQL instead of direct gRPC calls  
+3. **Phase 3**: Standardize on GraphQL Federation architecture
 
-The Envoy proxy provides backward compatibility during the migration period.
-  connect_timeout: 0.25s
-  type: logical_dns
-  http2_protocol_options: {}  # Enable HTTP/2 for gRPC
-  load_assignment:
-    cluster_name: grpc_service
-    endpoints:
-    - lb_endpoints:
-      - endpoint:
-          address:
-            socket_address:
-              address: 192.168.1.87  # Host machine IP (not localhost!)
-              port_value: 9090
-```
-
-**Important**: The address must be the host machine's IP, not `127.0.0.1`, because Envoy runs in Docker.
-
-### Frontend Setup
-
-#### Package Dependencies
-```json
-{
-  "grpc-web": "^1.5.0",
-  "google-protobuf": "^3.21.2",
-  "@types/google-protobuf": "^3.15.12"
-}
-```
-
-#### Code Generation Script
-```json
-{
-  "scripts": {
-    "proto:generate": "protoc --js_out=import_style=commonjs:src/generated --grpc-web_out=import_style=typescript,mode=grpcwebtext:src/generated --proto_path=../backend/src/main/proto ../backend/src/main/proto/user_service.proto"
-  }
-}
-```
-
-#### Client Usage
-```typescript
-const grpcClient = new UserServiceClient('http://localhost:8080', null, null);
-
-const loadUsers = async () => {
-  const request = new GetAllUsersRequest();
-  const response = await grpcClient.getAllUsers(request, {});
-  // Handle response...
-};
-```
+The GraphQL services act as adapters, making the migration seamless.
 
 ## Development Workflow
 
@@ -352,69 +305,72 @@ const loadUsers = async () => {
 When you modify the `.proto` file:
 
 1. **Backend**: Maven automatically regenerates Java classes during build
-2. **Frontend**: Run `npm run proto:generate` to regenerate TypeScript clients
-3. **Both**: Update service implementations and client code as needed
+2. **GraphQL Services**: Update GraphQL resolvers to match new gRPC service definitions
+3. **Frontend**: Apollo Client automatically handles GraphQL schema changes via introspection
 
 ### 2. Development Flow
 ```bash
-# 1. Start backend
-cd backend
-mvn spring-boot:run
+# Use Docker Compose for full stack development
+docker-compose -f docker-compose.graphql.yml up --build
 
-# 2. Start Envoy (in another terminal)
-docker run -it --rm -p 8080:8080 -p 9901:9901 \
-  -v $(pwd)/envoy.yaml:/etc/envoy/envoy.yaml \
-  envoyproxy/envoy:v1.28-latest -c /etc/envoy/envoy.yaml
+# Or start services individually:
+# 1. Backend
+cd backend && mvn spring-boot:run
 
-# 3. Start frontend (in another terminal)
-cd frontend
-npm start
+# 2. User GraphQL Service
+cd user-graphql-service && npm start
+
+# 3. Apollo Gateway
+cd apollo-gateway && npm start
+
+# 4. Frontend
+cd frontend-graphql && npm start
 ```
 
 ### 3. Testing the Stack
 - **Frontend**: http://localhost:3000
-- **Envoy Admin**: http://localhost:9901 (for debugging)
-- **Backend Health**: Use grpcurl or direct gRPC client testing
+- **GraphQL Playground**: http://localhost:4000/graphql
+- **User Service GraphQL**: http://localhost:4001/graphql
+- **Backend Health**: Use grpcurl or gRPC client testing
 
 ## Troubleshooting Common Issues
 
-### 1. 503 Service Unavailable
-**Cause**: Envoy cannot connect to backend
+### 1. GraphQL Service Connection Errors
+**Cause**: GraphQL service cannot connect to gRPC backend
 **Solutions**:
 - Verify backend is running on port 9090
-- Check Envoy configuration has correct host IP (not 127.0.0.1)
-- Use `docker logs <container-id>` to check Envoy logs
+- Check service configuration has correct gRPC service URL
+- Use `docker logs <container-id>` to check service logs
 
-### 2. CORS Errors
-**Cause**: Frontend origin not allowed
-**Solution**: Update CORS configuration in `envoy.yaml`:
-```yaml
-cors:
-  allow_origin_string_match:
-  - prefix: "http://localhost:3000"  # Add your frontend URL
-```
-
-### 3. Method Not Found
-**Cause**: Mismatch between proto definition and implementation
+### 2. Schema Federation Errors
+**Cause**: Gateway cannot compose schemas from services
 **Solutions**:
-- Verify proto file is identical between backend and frontend
-- Regenerate code after proto changes
+- Verify all GraphQL services are running and accessible
+- Check gateway configuration for correct service URLs
+- Ensure GraphQL schemas are properly federated with `@key` directives
+
+### 3. GraphQL Query Errors
+**Cause**: Query doesn't match available schema
+**Solutions**:
+- Use GraphQL Playground to explore available schema
+- Verify query syntax and field availability
+- Check resolvers are properly implemented in GraphQL services
 - Check service method names match exactly
 
 ### 4. Connection Refused
 **Cause**: Service not running or wrong port
 **Solutions**:
-- Verify all three services are running
+- Verify all services are running
 - Check port conflicts with `netstat -an | grep LISTEN`
-- Verify Docker networking for Envoy
+- Verify Docker networking between services
 
 ## Production Considerations
 
 ### Security
-- Add authentication/authorization to gRPC services
+- Add authentication/authorization to GraphQL services
 - Use TLS for gRPC communication
 - Implement proper CORS policies
-- Add rate limiting in Envoy
+- Add rate limiting to Apollo Gateway
 
 ### Deployment
 - Use Docker Compose for orchestration
@@ -423,10 +379,10 @@ cors:
 - Add monitoring and logging
 
 ### Performance
-- Configure connection pooling in Envoy
+- Configure connection pooling for gRPC services
 - Optimize protobuf message sizes
-- Implement gRPC streaming for large datasets
-- Add caching layers where appropriate
+- Implement GraphQL subscriptions for real-time data
+- Add caching layers in Apollo Gateway
 
 ## Benefits of This Architecture
 

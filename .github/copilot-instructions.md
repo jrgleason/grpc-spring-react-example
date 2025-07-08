@@ -4,8 +4,9 @@
 This is a full-stack gRPC-Web application with a React TypeScript frontend and Spring Boot Java backend. **All communication is via gRPC protocol only - no REST endpoints.**
 
 ## Architecture
-- **Frontend**: React + TypeScript + gRPC-Web (Port 3000)
-- **Proxy**: Envoy for gRPC-Web translation (Port 8080)  
+- **Frontend**: React + TypeScript + Apollo Client (Port 3000)
+- **API Gateway**: Apollo Federation Gateway (Port 4000)  
+- **GraphQL Services**: Node.js services wrapping gRPC calls (Port 4001+)
 - **Backend**: Spring Boot + gRPC Server (Port 9090)
 
 ## Language-Specific Instructions
@@ -18,10 +19,10 @@ See [javascript.md](./copilot-instructions/javascript.md) for React gRPC-Web cli
 
 ## General Guidelines
 
-We use Protocol Buffers for all API definitions - never suggest REST endpoints or HTTP client libraries. Always work with the generated gRPC clients and services.
+We use Apollo GraphQL Federation for all frontend-backend communication - never suggest gRPC-Web patterns or Envoy proxy configurations. Always work with GraphQL schemas, resolvers, and Apollo Client patterns.
 
-When suggesting architectural changes, consider the gRPC-Web proxy requirements and ensure compatibility between frontend gRPC-Web and backend gRPC implementations.
+When suggesting architectural changes, consider the GraphQL Federation requirements and ensure compatibility between Apollo Client, Apollo Gateway, and GraphQL service implementations.
 
-For any proto file modifications, remember that code regeneration is required for both frontend TypeScript clients and backend Java classes.
+For any schema modifications, remember that the GraphQL gateway automatically composes schemas from federated services.
 
 All development should follow the established gRPC patterns documented in the language-specific instruction files.

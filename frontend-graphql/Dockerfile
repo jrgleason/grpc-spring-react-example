@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies inside container to get correct platform binaries
+RUN rm -rf node_modules package-lock.json && npm install
 
 # Copy source code
 COPY . .

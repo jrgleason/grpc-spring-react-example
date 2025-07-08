@@ -5,9 +5,10 @@ This is a gRPC-only Spring Boot backend (Java 24) that serves as part of a full-
 
 ## Architecture Overview
 - **Backend**: Spring Boot 3.5+ with Spring gRPC integration (Port 9090)
-- **Frontend**: React TypeScript with gRPC-Web client (Port 3000)  
-- **Proxy**: Envoy proxy for gRPC-Web translation (Port 8080)
-- **Protocol**: 100% gRPC communication using Protocol Buffers
+- **Frontend**: React TypeScript with Apollo Client via GraphQL Federation (Port 3000)  
+- **API Gateway**: Apollo Federation Gateway (Port 4000)
+- **GraphQL Services**: Node.js services that wrap gRPC calls (Port 4001+)
+- **Protocol**: gRPC for backend services, GraphQL for frontend communication
 
 ## Key Technologies & Dependencies
 - Spring Boot 3.5.4-SNAPSHOT
@@ -190,7 +191,7 @@ public void streamUsers(StreamUsersRequest request,
 - **Port conflicts**: Ensure port 9090 is available
 - **Proto compilation errors**: Check .proto syntax and field numbering
 - **Service registration**: Verify `@GrpcService` annotation is present
-- **Envoy connection**: Backend must be reachable from Docker container
+- **GraphQL service connection**: Backend must be reachable from GraphQL services
 
 ### Debugging
 - Enable gRPC debug logging in application.properties
@@ -199,7 +200,7 @@ public void streamUsers(StreamUsersRequest request,
 - Check generated protobuf classes in target directory
 
 ## Integration Points
-- **Frontend**: Communicates via Envoy proxy on port 8080
+- **GraphQL Services**: Communicates with GraphQL services that wrap gRPC calls
 - **Database**: Integrate using Spring Data JPA or similar
 - **Monitoring**: Use Spring Boot Actuator endpoints
 - **Testing**: gRPC testing framework for unit/integration tests

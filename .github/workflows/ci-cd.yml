@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '22'
   JAVA_VERSION: '24'
 
 jobs:
@@ -36,12 +36,12 @@ jobs:
     - name: Run backend tests
       working-directory: ./backend
       run: |
-        ./mvnw clean test
+        mvn clean test
     
     - name: Build backend
       working-directory: ./backend
       run: |
-        ./mvnw clean package -DskipTests
+        mvn clean package -DskipTests
     
     - name: Upload backend artifact
       uses: actions/upload-artifact@v4
@@ -56,15 +56,16 @@ jobs:
     strategy:
       matrix:
         service: [apollo-gateway, user-graphql-service, frontend-graphql]
+        node-version: ['22', '24']
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Set up Node.js ${{ env.NODE_VERSION }}
+    - name: Set up Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ env.NODE_VERSION }}
+        node-version: ${{ matrix.node-version }}
         cache: 'npm'
         cache-dependency-path: ${{ matrix.service }}/package-lock.json
     

@@ -500,3 +500,166 @@ const gateway = new ApolloGateway({
 - [GraphQL Best Practices](https://graphql.org/learn/best-practices/)
 - [Apollo Client Documentation](https://www.apollographql.com/docs/react/)
 - [GraphQL Specification](https://spec.graphql.org/)
+
+## 📝 Additional API Examples
+
+### Advanced GraphQL Queries
+```graphql
+# Fetch all users with specific fields
+query GetAllUsers {
+  users {
+    id
+    name
+    email
+    role
+    createdAt
+  }
+}
+
+# Create new user with full data
+mutation CreateUser {
+  createUser(
+    name: "Jane Smith"
+    email: "jane@example.com"
+    role: "ADMIN"
+  ) {
+    id
+    name
+    email
+    role
+    createdAt
+  }
+}
+
+# Update existing user
+mutation UpdateUser {
+  updateUser(
+    id: "1"
+    name: "Updated Name"
+    email: "updated@example.com"
+  ) {
+    id
+    name
+    email
+    role
+    createdAt
+  }
+}
+
+# Delete user
+mutation DeleteUser {
+  deleteUser(id: "1") {
+    success
+    message
+  }
+}
+```
+
+### Frontend Integration Examples
+
+#### React with Apollo Client
+```typescript
+// GraphQL query with Apollo Client
+import { gql, useQuery } from '@apollo/client';
+
+const GET_USERS = gql`
+  query GetUsers {
+    users {
+      id
+      name
+      email
+      role
+    }
+  }
+`;
+
+const { data, loading, error } = useQuery(GET_USERS);
+```
+
+#### Apollo Client Setup
+```typescript
+import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
+
+const client = new ApolloClient({
+  uri: 'http://localhost:4000/graphql',
+  cache: new InMemoryCache(),
+});
+
+function App() {
+  return (
+    <ApolloProvider client={client}>
+      {/* Your app components */}
+    </ApolloProvider>
+  );
+}
+```
+
+## 🔧 gRPC Service Definition (Backend)
+
+For reference, the underlying gRPC service defines:
+
+```protobuf
+service UserService {
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+  rpc CreateUser(CreateUserRequest) returns (User);
+  rpc UpdateUser(UpdateUserRequest) returns (User);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc StreamUsers(StreamUsersRequest) returns (stream User);
+}
+
+message User {
+  int64 id = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
+  string created_at = 5;
+}
+```
+
+### Backend Implementation Example
+```java
+@GrpcService
+public class UserGrpcService extends UserServiceGrpc.UserServiceImplBase {
+    @Override
+    public void getAllUsers(GetAllUsersRequest request, 
+                           StreamObserver<GetAllUsersResponse> responseObserver) {
+        // Implementation
+        GetAllUsersResponse response = GetAllUsersResponse.newBuilder()
+            .addAllUsers(usersList)
+            .build();
+        
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
+}
+```
+
+## 🧪 Advanced Testing
+
+### gRPC Testing (Direct Backend Access)
+```bash
+# Using grpcurl for direct gRPC testing
+grpcurl -plaintext localhost:9090 list
+grpcurl -plaintext localhost:9090 org.jrg.grpc.UserService/GetAllUsers
+
+# Test gRPC with JSON data
+grpcurl -plaintext -d '{}' localhost:9090 org.jrg.grpc.UserService/GetAllUsers
+
+# Test specific user creation
+grpcurl -plaintext -d '{"name":"Test User","email":"test@example.com","role":"USER"}' \
+  localhost:9090 org.jrg.grpc.UserService/CreateUser
+```
+
+### GraphQL Testing with curl
+```bash
+# Manual GraphQL testing
+curl -X POST http://localhost:4000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query":"{ users { id name email } }"}'
+
+# Test mutation
+curl -X POST http://localhost:4000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query":"mutation { createUser(name:\"Test\", email:\"test@example.com\", role:\"USER\") { id name } }"}'
+```

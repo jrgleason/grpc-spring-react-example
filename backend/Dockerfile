@@ -1,26 +1,24 @@
 # Multi-stage build for Spring Boot gRPC Backend
 
 # Build stage
-FROM openjdk:24-jdk-slim AS builder
+FROM maven:3.9-eclipse-temurin-24 AS builder
 
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml for dependency caching
-COPY mvnw ./
-COPY .mvn .mvn
+# Copy pom.xml for dependency caching
 COPY pom.xml ./
 
 # Download dependencies (this layer will be cached if pom.xml doesn't change)
-RUN ./mvnw dependency:go-offline -B
+RUN mvn dependency:go-offline -B
 
 # Copy source code
 COPY src ./src
 
 # Build the application
-RUN ./mvnw clean package -DskipTests -B
+RUN mvn clean package -DskipTests -B
 
 # Runtime stage
-FROM openjdk:24-jdk-slim
+FROM eclipse-temurin:24-jdk-alpine
 
 WORKDIR /app
 

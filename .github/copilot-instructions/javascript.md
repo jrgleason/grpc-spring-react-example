@@ -1,322 +1,365 @@
 # GitHub Copilot Instructions for JavaScript/TypeScript Frontend
 
 ## Project Context
-This is a React TypeScript frontend that communicates exclusively with a gRPC backend via gRPC-Web protocol. The application uses **NO REST API calls** - all server communication is through gRPC-Web.
+This is a React TypeScript frontend that communicates with a GraphQL Federation Gateway via Apollo Client. The application uses **GraphQL over HTTP** - no direct gRPC calls from the frontend.
 
 ## Architecture Overview
-- **Frontend**: React 18+ with TypeScript and gRPC-Web client (Port 3000)
-- **Proxy**: Envoy proxy for gRPC-Web translation (Port 8080)
+- **Frontend**: React 18+ with TypeScript and Apollo Client (Port 3000)
+- **API Gateway**: Apollo Federation Gateway (Port 4000)
+- **GraphQL Services**: Node.js services that wrap gRPC backend calls (Port 4001+)
 - **Backend**: Spring Boot gRPC server (Port 9090)
-- **Protocol**: 100% gRPC-Web communication using Protocol Buffers
+- **Protocol**: GraphQL over HTTP, with gRPC communication handled by GraphQL services
 
 ## Key Technologies & Dependencies
 - React 18.2+ with TypeScript 4.9+
-- gRPC-Web 1.4+ (`grpc-web`)
-- Google Protocol Buffers (`google-protobuf`)
+- Apollo Client 3.8+ (`@apollo/client`)
+- GraphQL (`graphql`)
 - Create React App with TypeScript template
-- Auto-generated TypeScript clients from .proto files
 
-## Code Generation & Build Process
-- **Proto Files**: Located in `backend/src/main/proto/`
-- **Generated Code**: TypeScript clients in `frontend/src/generated/`
-- **Generation Script**: `npm run proto:generate` (runs protoc with gRPC-Web plugin)
-- **Workflow**: Proto changes → regenerate → update React components
-
-## gRPC-Web Client Implementation Patterns
+## Apollo Client Implementation Patterns
 
 ### Client Initialization
-Always initialize the gRPC client to connect through Envoy proxy:
+Always initialize Apollo Client to connect to the GraphQL Federation Gateway:
 ```typescript
-import { UserServiceClient } from './generated/User_serviceServiceClientPb';
+import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 
-const grpcClient = new UserServiceClient('http://localhost:8080', null, null);
+const client = new ApolloClient({
+  uri: 'http://localhost:4000/graphql',
+  cache: new InMemoryCache(),
+});
 ```
 
-### Promise-based gRPC Calls
-Convert gRPC callbacks to Promises for better async handling:
+### Query Implementation
+Use Apollo hooks for GraphQL queries:
 ```typescript
-const loadUsers = async () => {
-  const request = new GetAllUsersRequest();
-  
-  const response = await new Promise<GetAllUsersResponse>((resolve, reject) => {
-    grpcClient.getAllUsers(request, {}, (err: any, response: any) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(response);
-      }
-    });
-  });
-  
-  return response.getUsersList();
+import { gql, useQuery } from '@apollo/client';
+
+const GET_USERS = gql`
+  query GetUsers {
+    users {
+      id
+      name
+      email
+      role
+      createdAt
+    }
+  }
+`;
+
+const UsersList = () => {
+  const { data, loading, error } = useQuery(GET_USERS);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      {data.users.map(user => (
+        <div key={user.id}>{user.name}</div>
+      ))}
+    </div>
+  );
 };
 ```
 
-### Error Handling Pattern
-Handle gRPC errors with proper status codes:
+### Mutation Implementation
+Use Apollo hooks for GraphQL mutations:
 ```typescript
-try {
-  const response = await grpcCall();
-  // Handle success
-} catch (error: any) {
-  if (error.code === 5) { // NOT_FOUND
-    setError('User not found');
-  } else if (error.code === 3) { // INVALID_ARGUMENT
-    setError('Invalid input data');
-  } else {
-    setError('Server error occurred');
+import { gql, useMutation } from '@apollo/client';
+
+const CREATE_USER = gql`
+  mutation CreateUser($input: CreateUserInput!) {
+    createUser(input: $input) {
+      id
+      name
+      email
+      role
+    }
   }
-}
+`;
+
+const CreateUserForm = () => {
+  const [createUser, { loading, error }] = useMutation(CREATE_USER, {
+    refetchQueries: ['GetUsers'], // Refresh user list after creation
+  });
+
+  const handleSubmit = async (formData) => {
+    try {
+      await createUser({
+        variables: {
+          input: {
+            name: formData.name,
+            email: formData.email,
+            role: formData.role,
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error creating user:', error);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* Form fields */}
+    </form>
+  );
+};
 ```
 
-## Protocol Buffer Data Handling
+## GraphQL Data Handling
 
-### Converting Proto Objects to JavaScript
+### Error Handling Pattern
+Handle GraphQL errors with proper user feedback:
 ```typescript
-// Proto to JavaScript object conversion
-const usersData: UserData[] = usersList.map((user: User) => ({
-  id: user.getId(),
-  name: user.getName(),
-  email: user.getEmail(),
-  role: user.getRole(),
-  createdAt: user.getCreatedAt()
-}));
+import { ApolloError } from '@apollo/client';
+
+const handleError = (error: ApolloError) => {
+  if (error.networkError) {
+    console.error('Network error:', error.networkError);
+    return 'Network error occurred';
+  }
+  
+  if (error.graphQLErrors?.length > 0) {
+    console.error('GraphQL errors:', error.graphQLErrors);
+    return error.graphQLErrors[0].message;
+  }
+  
+  return 'An unexpected error occurred';
+};
 ```
 
-### Creating Proto Messages for Requests
+### Cache Management
+Leverage Apollo Client's intelligent caching:
 ```typescript
-// Create request messages using builders
-const request = new CreateUserRequest();
-request.setName(formData.name);
-request.setEmail(formData.email);
-request.setRole(formData.role);
-
-// Send the request
-const createdUser = await grpcClient.createUser(request, {});
-```
-
-### Working with Repeated Fields
-```typescript
-// Handle repeated fields (arrays) in proto messages
-const usersList = response.getUsersList(); // Returns User[]
-const userIds = response.getUserIdsList(); // Returns number[]
+// Optimistic updates for better UX
+const [updateUser] = useMutation(UPDATE_USER, {
+  optimisticResponse: {
+    updateUser: {
+      __typename: 'User',
+      id: userId,
+      name: newName,
+      email: newEmail,
+      role: newRole,
+    },
+  },
+  update: (cache, { data }) => {
+    // Update cache manually if needed
+    cache.modify({
+      id: cache.identify(data.updateUser),
+      fields: {
+        name: () => data.updateUser.name,
+      },
+    });
+  },
+});
 ```
 
 ## React Component Patterns
 
-### State Management for gRPC Data
+### State Management with Apollo
 ```typescript
-interface UserData {
-  id: number;
+interface User {
+  id: string;
   name: string;
   email: string;
   role: string;
   createdAt: string;
 }
 
-const [users, setUsers] = useState<UserData[]>([]);
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState<string | null>(null);
-```
+const UserManagement = () => {
+  const { data, loading, error, refetch } = useQuery<{users: User[]}>(GET_USERS);
+  const [createUser] = useMutation(CREATE_USER);
+  const [updateUser] = useMutation(UPDATE_USER);
+  const [deleteUser] = useMutation(DELETE_USER);
 
-### useEffect for Data Loading
-```typescript
-useEffect(() => {
-  const loadData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await grpcCall();
-      setUsers(data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  loadData();
-}, []);
-```
-
-### Form Handling with gRPC
-```typescript
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  try {
-    const request = new CreateUserRequest();
-    request.setName(formData.name);
-    request.setEmail(formData.email);
-    request.setRole(formData.role);
-    
-    await grpcClient.createUser(request, {});
-    
-    // Reload data and reset form
-    await loadUsers();
-    setFormData({ name: '', email: '', role: 'USER' });
-    setShowForm(false);
-  } catch (error: any) {
-    setError(error.message);
-  }
+  // Component logic using Apollo hooks
+  return (
+    <div>
+      {/* Component JSX */}
+    </div>
+  );
 };
 ```
 
-## Generated Code Structure
-
-### Import Patterns
+### Loading and Error States
 ```typescript
-// Service client import
-import { UserServiceClient } from './generated/User_serviceServiceClientPb';
+const UsersList = () => {
+  const { data, loading, error } = useQuery(GET_USERS);
 
-// Message types import
-import { 
-  User, 
-  GetAllUsersRequest, 
-  CreateUserRequest, 
-  UpdateUserRequest 
-} from './generated/user_service_pb';
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+  if (!data?.users?.length) return <EmptyState />;
+
+  return (
+    <div>
+      {data.users.map(user => (
+        <UserCard key={user.id} user={user} />
+      ))}
+    </div>
+  );
+};
 ```
-
-### Generated File Structure
-- `*ServiceClientPb.ts` - gRPC service client
-- `*_pb.ts` - Protocol buffer message classes
-- `*_pb.d.ts` - TypeScript type definitions
 
 ## Development Workflow
 
-### Proto Changes Process
-1. Modify `.proto` files in `backend/src/main/proto/`
-2. Run `npm run proto:generate` in frontend directory
-3. Update React components to match new proto definitions
-4. Test with backend to ensure compatibility
+### Schema Changes Process
+1. GraphQL services automatically update their schemas
+2. Apollo Gateway recomposes the federated schema
+3. Frontend automatically gets new schema via introspection
+4. Update React components to use new fields/operations
 
-### Code Generation Script
+### Code Generation (Optional)
 ```json
 {
   "scripts": {
-    "proto:generate": "protoc --plugin=protoc-gen-grpc-web=./node_modules/.bin/protoc-gen-grpc-web --js_out=import_style=commonjs:./src/generated --grpc-web_out=import_style=typescript,mode=grpcwebtext:./src/generated ../backend/src/main/proto/*.proto"
+    "codegen": "graphql-codegen --config codegen.yml",
+    "type-check": "tsc --noEmit"
   }
 }
 ```
 
-### Testing gRPC-Web Integration
-- Ensure backend gRPC server is running (port 9090)
-- Ensure Envoy proxy is running (port 8080)
-- Use browser dev tools to monitor network requests to Envoy
-- Check for CORS errors in browser console
+### Testing GraphQL Integration
+- Use Apollo Client's MockedProvider for component testing
+- Test GraphQL operations with GraphQL Playground at http://localhost:4000/graphql
+- Use Apollo Client DevTools browser extension for debugging
 
 ## Best Practices
 
 ### Code Organization
-- Keep generated files in `src/generated/` directory
-- Create service wrapper functions for complex gRPC calls
-- Use TypeScript interfaces for component props and state
-- Implement proper error boundaries for gRPC errors
+- Keep GraphQL queries/mutations in separate files
+- Use fragments for reusable field selections
+- Implement proper TypeScript types for GraphQL operations
+- Create custom hooks for complex GraphQL logic
 
 ### Performance Considerations
-- Implement request cancellation for component unmounting
-- Use React.memo for expensive rendering operations
-- Cache gRPC client instances
-- Implement proper loading states
+- Use Apollo Client's built-in caching effectively
+- Implement proper pagination for large datasets
+- Use Apollo's `fetchPolicy` options appropriately
+- Consider using subscriptions for real-time updates
 
 ### Error Handling
-- Map gRPC status codes to user-friendly messages
-- Implement retry logic for transient failures
-- Show appropriate loading and error states
-- Log errors for debugging (but not sensitive data)
+- Implement consistent error handling across components
+- Use Apollo's error boundaries for global error handling
+- Provide meaningful user feedback for different error types
+- Log errors appropriately for debugging
 
 ## TypeScript Configuration
 
-### Strict Type Checking
-Always use strict TypeScript settings for better type safety:
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true
-  }
+### GraphQL Types
+Generate TypeScript types from GraphQL schema:
+```typescript
+// Generated types
+export interface User {
+  __typename?: 'User';
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  createdAt: string;
+}
+
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  USER = 'USER'
 }
 ```
 
-### Proto Generated Types
-Work with generated protobuf types:
+### Query/Mutation Types
+Use properly typed Apollo hooks:
 ```typescript
-// Use generated types for type safety
-const user: User = new User();
-user.setName('John Doe');
+import { DocumentNode } from 'graphql';
 
-// Convert to plain objects when needed
-const userData: UserData = {
-  id: user.getId(),
-  name: user.getName(),
-  // ... other fields
-};
+const GET_USERS: DocumentNode = gql`
+  query GetUsers {
+    users {
+      id
+      name
+      email
+      role
+    }
+  }
+`;
+
+// TypeScript will infer types from the query
+const { data, loading, error } = useQuery(GET_USERS);
 ```
 
 ## Common Patterns
 
-### Async/Await with gRPC-Web
+### Reusable GraphQL Hooks
 ```typescript
-const grpcCall = async <T>(
-  call: (callback: (err: any, response: T) => void) => void
-): Promise<T> => {
-  return new Promise((resolve, reject) => {
-    call((err: any, response: T) => {
-      if (err) reject(err);
-      else resolve(response);
+export const useUsers = () => {
+  const { data, loading, error, refetch } = useQuery(GET_USERS);
+  
+  return {
+    users: data?.users || [],
+    loading,
+    error,
+    refetch,
+  };
+};
+
+export const useCreateUser = () => {
+  const [createUserMutation, { loading, error }] = useMutation(CREATE_USER);
+  
+  const createUser = async (input: CreateUserInput) => {
+    const { data } = await createUserMutation({
+      variables: { input },
+      refetchQueries: ['GetUsers'],
     });
-  });
+    return data?.createUser;
+  };
+  
+  return { createUser, loading, error };
 };
 ```
 
-### Loading State Management
+### Fragment Usage
 ```typescript
-const useGrpcCall = <T>(grpcFunction: () => Promise<T>) => {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const execute = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await grpcFunction();
-      setData(result);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+const USER_FRAGMENT = gql`
+  fragment UserFields on User {
+    id
+    name
+    email
+    role
+    createdAt
+  }
+`;
+
+const GET_USERS = gql`
+  ${USER_FRAGMENT}
+  query GetUsers {
+    users {
+      ...UserFields
     }
-  };
-  
-  return { data, loading, error, execute };
-};
+  }
+`;
 ```
 
 ## Troubleshooting Guidelines
 
 ### Common Issues
-- **CORS errors**: Check Envoy configuration and frontend URL
-- **Connection refused**: Verify Envoy proxy is running on port 8080
-- **Method not found**: Regenerate client code after proto changes
-- **Type errors**: Ensure generated TypeScript files are up to date
+- **Network errors**: Check if Apollo Gateway is running on port 4000
+- **Schema errors**: Verify GraphQL services are running and federated properly
+- **Type errors**: Ensure GraphQL operations match the available schema
+- **Cache issues**: Use Apollo Client DevTools to inspect cache state
 
 ### Debugging Tips
-- Use browser Network tab to inspect gRPC-Web requests
-- Check console for gRPC error messages and status codes
-- Verify proto file synchronization between frontend and backend
-- Test backend gRPC service independently with grpcurl
+- Use GraphQL Playground to test queries before implementing
+- Check browser Network tab for GraphQL requests
+- Use Apollo Client DevTools browser extension
+- Enable Apollo Client's developer mode for better error messages
 
 ## Integration Points
-- **Backend**: Communicates via Envoy proxy (localhost:8080)
-- **Build Process**: Integrates with protoc for code generation
+- **API Gateway**: Communicates with Apollo Federation Gateway (localhost:4000/graphql)
 - **Development**: Hot reload with Create React App
-- **Testing**: Unit tests with React Testing Library and gRPC mocking
+- **Testing**: Unit tests with React Testing Library and Apollo MockedProvider
+- **Build**: Builds to static files for deployment
 
 ## Styling and UI
 - Use modern CSS-in-JS or CSS modules for styling
 - Implement responsive design for mobile compatibility
-- Create reusable components for gRPC data display
+- Create reusable components for GraphQL data display
 - Handle loading and error states with proper UI feedback
+- Use Apollo Client's loading states for better UX

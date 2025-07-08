@@ -2,6 +2,16 @@
 
 This document outlines the implementation of Apollo GraphQL Federation that has been successfully added to the existing gRPC backend services.
 
+## Prerequisites
+
+- **Java 24+** and **Maven 3.9+** for the Spring Boot backend
+- **Node.js 22+** for GraphQL services and frontend (supports Node.js 24)
+- **Docker & Docker Compose** for containerized deployment
+
+> **Maven Installation**: Maven must be installed system-wide. This project does not use the Maven Wrapper (`mvnw`).
+> 
+> **Quick install**: `brew install maven` (macOS) | `sudo apt install maven` (Ubuntu) | [maven.apache.org](https://maven.apache.org/install.html) (Windows/Manual)
+
 ## ✅ Current Architecture
 
 The GraphQL Federation layer has been implemented on top of the existing gRPC backend:
@@ -47,7 +57,7 @@ graph LR
 **Status**: ✅ Implemented
 - React application using Apollo Client
 - Consumes unified GraphQL API from Apollo Gateway
-- Maintains backward compatibility with gRPC-Web via Envoy
+- Modern React application with Apollo Client integration
 
 **Key Files**:
 - `frontend-graphql/src/` - React components with Apollo Client
@@ -82,9 +92,9 @@ graph LR
 
 ### 4. Migration Strategy
 - ✅ Gradual migration from gRPC-Web to GraphQL
-- ✅ Both systems running in parallel
-- ✅ No breaking changes to existing backend
-- ✅ Envoy proxy maintains backward compatibility
+- ✅ GraphQL Federation provides unified API layer
+- ✅ No breaking changes to existing backend services
+- ✅ Modern Apollo Client for improved developer experience
 
 ## 🚀 Getting Started
 
@@ -98,14 +108,13 @@ docker-compose -f docker-compose.graphql.yml up --build
 # Apollo Gateway: http://localhost:4000/graphql
 # User GraphQL Service: http://localhost:4001/graphql
 # gRPC Backend: localhost:9090 (internal)
-# Envoy Proxy: http://localhost:8080 (legacy support)
 ```
 
 ### Development Setup
 ```bash
 # 1. Start gRPC Backend
 cd backend
-./mvnw spring-boot:run
+mvn spring-boot:run
 
 # 2. Start User GraphQL Service
 cd user-graphql-service
@@ -494,10 +503,9 @@ spec:
 
 ## Migration Strategy
 
-### Phase 1: Add GraphQL Layer (Keep gRPC-Web)
+### Current Architecture (GraphQL Federation)
 ```
-Frontend (gRPC-Web) → Envoy → gRPC Services
-Frontend (GraphQL)   → Apollo → GraphQL Services → gRPC Services
+Frontend (GraphQL) → Apollo Gateway → GraphQL Services → gRPC Services
 ```
 
 ### Phase 2: Migrate to Istio
@@ -616,10 +624,10 @@ spec:
 
 ## Frontend Evolution
 
-### Current gRPC-Web Client
+### Legacy gRPC-Web Client (No longer used)
 ```typescript
-// Keep for internal/admin tools
-const grpcClient = new UserServiceClient('http://localhost:8080', null, null);
+// Legacy client - now replaced with GraphQL
+const grpcClient = new UserServiceClient('http://grpc-backend:9090', null, null);
 ```
 
 ### New GraphQL Client

@@ -1,6 +1,7 @@
 import { ApolloGateway, IntrospectAndCompose } from '@apollo/gateway';
 import { ApolloServer } from 'apollo-server-express';
 import express from 'express';
+import cors from 'cors';
 
 async function startGateway() {
   // Create Apollo Gateway with subgraph configuration
@@ -31,6 +32,12 @@ async function startGateway() {
 
   // Create Express app
   const app = express();
+
+  // Enable CORS for all origins (development setup)
+  app.use(cors({
+    origin: true, // Allow any origin in development
+    credentials: true, // Allow credentials
+  }));
 
   // Add health check endpoint
   app.get('/health', (req, res) => {
