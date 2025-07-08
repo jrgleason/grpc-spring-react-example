@@ -1,0 +1,188 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '22'
+  JAVA_VERSION: '24'
+
+jobs:
+  # Test Java Backend
+  test-backend:
+    name: Test gRPC Backend
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up JDK ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'oracle'
+    
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+    
+    - name: Run backend tests
+      working-directory: ./backend
+      run: |
+        mvn clean test
+    
+    - name: Build backend
+      working-directory: ./backend
+      run: |
+        mvn clean package -DskipTests
+    
+    - name: Upload backend artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-jar
+        path: backend/target/*.jar
+
+  # Test Node.js Services
+  test-nodejs-services:
+    name: Test Node.js Services
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [apollo-gateway, user-graphql-service, frontend-graphql]
+        node-version: ['22', '24']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: ${{ matrix.service }}/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./${{ matrix.service }}
+      run: npm ci
+    
+    - name: Run linting
+      working-directory: ./${{ matrix.service }}
+      run: |
+        if npm run lint --dry-run 2>/dev/null; then
+          npm run lint
+        else
+          echo "No lint script found, skipping..."
+        fi
+    
+    - name: Run tests
+      working-directory: ./${{ matrix.service }}
+      run: |
+        if npm run test --dry-run 2>/dev/null; then
+          npm run test
+        else
+          echo "No test script found, skipping..."
+        fi
+    
+    - name: Build service
+      working-directory: ./${{ matrix.service }}
+      run: |
+        if npm run build --dry-run 2>/dev/null; then
+          npm run build
+        else
+          echo "No build script found, skipping..."
+        fi
+
+  # Docker Build Test (without pushing)
+  docker-build-test:
+    name: Test Docker Builds
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-nodejs-services]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Download backend artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: backend-jar
+        path: backend/target/
+    
+    - name: Test Docker builds
+      uses: isbang/compose-action@v1.5.1
+      with:
+        compose-file: "./docker-compose.graphql.yml"
+        down-flags: "--volumes"
+        services: |
+          grpc-backend
+          apollo-gateway
+          user-graphql-service
+          frontend-graphql
+    
+    - name: Verify builds completed
+      run: |
+        echo "✅ Docker Compose build completed successfully!"
+        echo ""
+        echo "📋 All available Docker images:"
+        docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" | head -20
+        echo ""
+        echo "🔍 Images from our project (looking for common patterns):"
+        (docker images | grep -E "(grpc-backend|apollo-gateway|user-graphql|frontend-graphql)" | head -10) || true
+        echo ""
+        echo "📊 Total number of Docker images: $(docker images -q | wc -l)"
+        echo "✅ Build verification complete!"
+
+  # Security Scanning
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Complete Build Verification
+  complete-build:
+    name: Complete Build Verification
+    runs-on: ubuntu-latest
+    needs: [docker-build-test, security-scan]
+    
+    steps:
+    - name: Build verification complete
+      run: |
+        echo "✅ All builds and tests completed successfully!"
+        echo "✅ Docker images built and tested"
+        echo "✅ Security scan completed"
+        echo ""
+        echo "🚀 Ready for deployment!"
+        echo ""
+        echo "To enable Docker Hub push:"
+        echo "1. Set DOCKER_USERNAME in repository variables"
+        echo "2. Set DOCKER_PASSWORD in repository secrets"
+        echo "3. Uncomment Docker push steps in workflow"

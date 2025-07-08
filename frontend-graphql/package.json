@@ -1,0 +1,76 @@
+{
+  "name": "grpc-frontend-graphql",
+  "version": "0.1.0",
+  "description": "GraphQL frontend for gRPC stream example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "build:watch": "vite build --watch",
+    "serve": "vite preview",
+    "lint": "eslint .",
+    "test": "echo 'No tests yet - Frontend GraphQL React app' && exit 0",
+    "proto:generate": "protoc --plugin=protoc-gen-grpc-web=./node_modules/.bin/protoc-gen-grpc-web --js_out=import_style=commonjs:./src/generated --grpc-web_out=import_style=typescript,mode=grpcwebtext:./src/generated ../backend/src/main/proto/*.proto",
+    "graphql:codegen": "graphql-codegen --config codegen.yml"
+  },
+  "keywords": [
+    "grpc",
+    "graphql",
+    "react",
+    "vite"
+  ],
+  "dependencies": {
+    "@apollo/client": "latest",
+    "@emotion/react": "latest",
+    "@emotion/styled": "latest",
+    "@mui/icons-material": "latest",
+    "@mui/material": "latest",
+    "google-protobuf": "latest",
+    "graphql": "latest",
+    "grpc-web": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-router-dom": "latest",
+    "web-vitals": "latest"
+  },
+  "devDependencies": {
+    "@eslint/js": "latest",
+    "@vitejs/plugin-react": "latest",
+    "@graphql-codegen/cli": "latest",
+    "eslint": "latest",
+    "eslint-config-google": "latest",
+    "eslint-plugin-react": "latest",
+    "eslint-plugin-react-hooks": "latest",
+    "eslint-plugin-react-refresh": "latest",
+    "vite": "latest",
+    "vite-plugin-sitemap": "latest"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.0.0",
+    "@rollup/rollup-linux-arm64-gnu": "^4.0.0",
+    "@rollup/rollup-darwin-arm64": "^4.0.0",
+    "@rollup/rollup-win32-x64-msvc": "^4.0.0"
+  },
+  "overrides": {
+    "vite": {
+      "rollup": "npm:@rollup/wasm-node"
+    }
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=9.0.0"
+  }
+}

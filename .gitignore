@@ -1,32 +1,80 @@
-# General
+# =============================================================================
+# GENERAL OS AND EDITOR FILES
+# =============================================================================
+
+# macOS
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
+
+# Windows
 ehthumbs.db
 Thumbs.db
+
+# Linux
+*~
+
+# Temporary files
 *.log
 *.tmp
 *.temp
+*.pid
+*.seed
+*.pid.lock
 
-# IDE
-.vscode/
+# =============================================================================
+# IDE AND EDITOR CONFIGURATIONS
+# =============================================================================
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# IntelliJ IDEA
 .idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Eclipse/STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# Vim/Emacs
 *.swp
 *.swo
-*~
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Java/Maven (Backend)
+# =============================================================================
+# JAVA/SPRING BOOT BACKEND
+# =============================================================================
+
+# Maven
 backend/target/
-backend/.mvn/wrapper/maven-wrapper.jar
-backend/.mvn/wrapper/maven-wrapper.properties
-backend/.mvn/wrapper/MavenWrapperDownloader.java
-backend/mvnw
-backend/mvnw.cmd
 
-# Spring Boot
-backend/HELP.md
+# Gradle
 backend/.gradle/
 backend/build/
 backend/!gradle/wrapper/gradle-wrapper.jar
@@ -38,178 +86,95 @@ backend/src/main/java/**/generated/
 backend/target/generated-sources/
 backend/target/generated-test-sources/
 
-# STS (Spring Tool Suite)
-backend/.apt_generated
-backend/.classpath
-backend/.factorypath
-backend/.project
-backend/.settings
-backend/.springBeans
-backend/.sts4-cache
+# Spring Boot
+backend/HELP.md
 
-# IntelliJ IDEA
-backend/*.iws
-backend/*.iml
-backend/*.ipr
-backend/out/
+# =============================================================================
+# NODE.JS/REACT FRONTEND AND SERVICES
+# =============================================================================
 
-# NetBeans
-backend/nbproject/private/
-backend/nbbuild/
-backend/dist/
-backend/nbdist/
-backend/.nb-gradle/
+# Dependencies
+node_modules/
+jspm_packages/
+bower_components/
 
-# VS Code
-backend/.vscode/
+# Build outputs
+dist/
+build/
+target/
+.next/
+.nuxt/
+.vuepress/dist/
 
-# Node.js/React (Frontend)
-frontend/node_modules/
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
-frontend/lerna-debug.log*
+# Generated protobuf files
+frontend/src/proto/
+generated/
 
-# Runtime data
-frontend/pids
-frontend/*.pid
-frontend/*.seed
-frontend/*.pid.lock
+# Package managers
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+*.tgz
+.yarn-integrity
+.npm
 
-# Coverage directory used by tools like istanbul
-frontend/coverage/
-frontend/*.lcov
+# Testing and coverage
+coverage/
+*.lcov
+.nyc_output
 
-# nyc test coverage
-frontend/.nyc_output
+# Cache directories
+.cache/
+.parcel-cache/
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
 
-# Grunt intermediate storage
-frontend/.grunt
+# TypeScript
+*.tsbuildinfo
 
-# Bower dependency directory
-frontend/bower_components
+# Build tools
+.grunt/
+.fusebox/
 
-# node-waf configuration
-frontend/.lock-wscript
+# Runtime
+pids/
+.node_repl_history
 
-# Compiled binary addons
-frontend/build/Release
+# Storybook
+.out/
+.storybook-out/
 
-# Dependency directories
-frontend/jspm_packages/
+# =============================================================================
+# ENVIRONMENT AND CONFIGURATION
+# =============================================================================
 
-# TypeScript cache
-frontend/*.tsbuildinfo
-
-# Optional npm cache directory
-frontend/.npm
-
-# Optional eslint cache
-frontend/.eslintcache
-
-# Microbundle cache
-frontend/.rpt2_cache/
-frontend/.rts2_cache_cjs/
-frontend/.rts2_cache_es/
-frontend/.rts2_cache_umd/
-
-# Optional REPL history
-frontend/.node_repl_history
-
-# Output of 'npm pack'
-frontend/*.tgz
-
-# Yarn Integrity file
-frontend/.yarn-integrity
-
-# dotenv environment variables file
+# Environment variables
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# parcel-bundler cache
-frontend/.cache
-frontend/.parcel-cache
+# =============================================================================
+# DOCKER AND DEPLOYMENT
+# =============================================================================
 
-# Next.js build output
-frontend/.next
+# Serverless
+.serverless/
 
-# Nuxt.js build / generate output
-frontend/.nuxt
-frontend/dist
+# DynamoDB Local
+.dynamodb/
 
-# Gatsby files
-frontend/.cache/
-frontend/public
+# =============================================================================
+# APPLICATION-SPECIFIC FOLDERS
+# =============================================================================
 
-# Storybook build outputs
-frontend/.out
-frontend/.storybook-out
-
-# Temporary folders
+# Temporary directories
 tmp/
 temp/
+logs/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Generated protobuf files for frontend
-frontend/src/proto/
-
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Optional npm cache directory
-.npm
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# next.js build output
-.next
-
-# nuxt.js build output
-.nuxt
-
-# vuepress build output
-.vuepress/dist
-
-# Serverless directories
-.serverless
-
-# FuseBox cache
-.fusebox/
-
-# DynamoDB Local files
-.dynamodb/
+.vscode

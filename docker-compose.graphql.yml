@@ -1,0 +1,74 @@
+# Docker Compose with Apollo GraphQL Federation
+
+services:
+  # Existing gRPC Backend
+  grpc-backend:
+    build: ./backend
+    ports:
+      - "9090:9090"
+    networks:
+      - service-mesh
+    healthcheck:
+      test: ["CMD", "grpcurl", "-plaintext", "localhost:9090", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # User GraphQL Service (wraps gRPC)
+  user-graphql-service:
+    build: ./user-graphql-service
+    ports:
+      - "4001:4001"
+    environment:
+      - GRPC_SERVICE_URL=grpc-backend:9090
+      - NODE_ENV=development
+    depends_on:
+      - grpc-backend
+    networks:
+      - service-mesh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Apollo Federation Gateway
+  apollo-gateway:
+    build: ./apollo-gateway
+    ports:
+      - "4000:4000"
+    environment:
+      - USER_GRAPHQL_SERVICE_URL=http://user-graphql-service:4001/graphql
+      - NODE_ENV=development
+    depends_on:
+      - user-graphql-service
+    networks:
+      - service-mesh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend with GraphQL Apollo Client
+  frontend-graphql:
+    build: 
+      context: ./frontend-graphql
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_GRAPHQL_URL=http://localhost:4000/graphql
+    depends_on:
+      - apollo-gateway
+    networks:
+      - service-mesh
+
+networks:
+  service-mesh:
+    driver: bridge
+
+# Optional: Add volumes for persistent data
+volumes:
+  apollo_cache:
+  graphql_logs:

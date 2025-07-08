@@ -1,209 +1,151 @@
-# React + Spring Boot gRPC Demo
+# Full-Stack GraphQL Federation with gRPC Backend
 
-This project demonstrates communication between a React frontend and a Spring Boot backend using gRPC with gRPC-Web.
+A modern **GraphQL Federation** architecture demonstrating microservices communication with a **gRPC backend**. Features Apollo Gateway, federated GraphQL services, and type-safe communication using Protocol Buffers.
 
-## Project Structure
+**🆕 Production-ready with CI/CD pipeline and Docker deployment!**
 
-```
-stream-example/
-├── backend/          # Spring Boot gRPC backend
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/
-│   │   │   ├── proto/    # Protocol Buffer definitions
-│   │   │   └── resources/
-│   │   ├── test/
-│   │   └── Dockerfile
-│   └── pom.xml
-├── frontend/         # React TypeScript frontend
-│   ├── src/
-│   │   ├── generated/    # Generated gRPC-Web client code
-│   │   ├── App.tsx
-│   │   └── ...
-│   ├── public/
-│   ├── package.json
-│   └── tsconfig.json
-├── envoy.yaml        # Envoy proxy configuration for gRPC-Web
-└── docker-compose.yml
+## 🏗️ Architecture
+
+```mermaid
+graph LR
+    A[React App<br/>Apollo Client<br/>Port 3000] <-->|GraphQL| B[Apollo Gateway<br/>Port 4000]
+    B <-->|Federated<br/>GraphQL| C[User GraphQL Service<br/>Port 4001]
+    C <-->|gRPC| D[Spring Boot Backend<br/>Port 9090]
+    
+    style A fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#311c87,stroke:#333,stroke-width:2px,color:#fff
+    style C fill:#e10098,stroke:#333,stroke-width:2px,color:#fff
+    style D fill:#6db33f,stroke:#333,stroke-width:2px,color:#fff
 ```
 
-## Features
+- **Frontend**: React with Apollo Client (GraphQL)
+- **API Gateway**: Apollo Federation Gateway (port 4000)
+- **Microservice**: User GraphQL Service (port 4001) 
+- **Backend**: Spring Boot gRPC Server (port 9090)
+- **Protocol**: GraphQL over HTTP + gRPC with Protocol Buffers
 
-### Backend (Spring Boot + gRPC)
-- Spring Boot 3.5.4-SNAPSHOT with official Spring gRPC support
-- Protocol Buffers for service definitions
-- UserService with CRUD operations
-- gRPC server on port 9090
-- No REST endpoints (gRPC-only)
+## 📋 Prerequisites
 
-### Frontend (React + TypeScript + gRPC-Web)
-- Modern React 18 with TypeScript
-- Responsive UI with CSS Grid and Flexbox
-- gRPC-Web client integration
-- User management with CRUD operations
-- Real-time communication via gRPC
+- **Java 24+** (for Spring Boot backend)
+- **Node.js 22+** (for GraphQL services and frontend)
+- **Docker & Docker Compose** (for containerized deployment)
+- **Maven 3.9+** (must be installed system-wide for backend build)
 
-### Envoy Proxy
-- gRPC-Web proxy for browser compatibility
-- CORS support for development
-- HTTP/2 to gRPC translation
-
-## Getting Started
-
-### Prerequisites
-- Java 24+
-- Node.js 18+
-- Maven 3.9+
-- Docker and Docker Compose
+## 🚀 Quick Start
 
 ### Option 1: Docker Compose (Recommended)
+```bash
+git clone <repository>
+cd stream-example
 
-1. Start all services:
-   ```bash
-   docker-compose up --build
-   ```
+# Start entire stack with one command
+docker-compose -f docker-compose.graphql.yml up --build
 
-This will start:
-- gRPC backend on port 9090
-- Envoy proxy on port 8080 (gRPC-Web endpoint)
-- React frontend on port 3000
+# Services will be available at:
+# Frontend: http://localhost:3000
+# Apollo Gateway: http://localhost:4000/graphql
+# User Service: http://localhost:4001/graphql
+# gRPC Backend: grpc://localhost:9090
+```
 
-### Option 2: Manual Setup
+### Option 2: Development Setup
+```bash
+# 1. Start gRPC Backend (Terminal 1)
+cd backend
+mvn spring-boot:run
 
-#### Backend Setup
+# 2. Start User GraphQL Service (Terminal 2)
+cd user-graphql-service
+npm install && npm start
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
+# 3. Start Apollo Gateway (Terminal 3)
+cd apollo-gateway
+npm install && npm start
 
-2. Compile and generate protobuf classes:
-   ```bash
-   mvn clean compile
-   ```
+# 4. Start Frontend (Terminal 4)
+cd frontend-graphql
+npm install && npm start
+```
 
-3. Run the Spring Boot application:
-   ```bash
-   mvn spring-boot:run
-   ```
+## 🧪 Testing the Application
 
-The backend will start on port 9090 (gRPC only).
+### Quick Test
+```graphql
+# Get all users - Try this in GraphQL Playground at http://localhost:4000/graphql
+query GetUsers {
+  users {
+    id
+    name
+    email
+    role
+    createdAt
+  }
+}
 
-#### Envoy Proxy Setup
+# Create a user
+mutation CreateUser {
+  createUser(name: "John Doe", email: "john@example.com", role: "USER") {
+    id
+    name
+    email
+  }
+}
+```
 
-1. Install Docker if not already installed
+### Health Checks
+```bash
+curl http://localhost:4000/health  # Gateway health
+curl http://localhost:4001/health  # User service health
+curl http://localhost:3000         # Frontend
+```
 
-2. Run Envoy proxy:
-   ```bash
-   docker run -it --rm -p 8080:8080 -p 9901:9901 \
-     -v $(pwd)/envoy.yaml:/etc/envoy/envoy.yaml \
-     envoyproxy/envoy:v1.28-latest \
-     -c /etc/envoy/envoy.yaml -l debug
-   ```
+## 📚 Documentation
 
-#### Frontend Setup
+### Complete Guides
+- **[🚀 Development Guide](./docs/DEVELOPMENT.md)** - Local setup, workflows, and best practices
+- **[✨ Features Documentation](./docs/FEATURES.md)** - Detailed feature overview and capabilities
+- **[📁 Project Structure](./docs/PROJECT_STRUCTURE.md)** - Complete project organization
+- **[🏗️ Architecture Guide](./docs/INSTRUCTIONS.md)** - Detailed architecture explanation
+- **[📈 GraphQL API Reference](./docs/GRAPHQL_API.md)** - Complete GraphQL API documentation
 
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
+### CI/CD & Migration
+- **[🔄 CI/CD Pipeline](./.github/workflows/README.md)** - GitHub Actions workflow documentation
+- **[📋 Migration Guide](./docs/ADDING_APOLLO.md)** - How we evolved from gRPC-Web to GraphQL
+- **[🗂️ Documentation Index](./docs/README.md)** - Complete documentation overview
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+## 🎯 Key Highlights
 
-3. Generate gRPC-Web client code:
-   ```bash
-   npm run proto:generate
-   ```
+- **🔧 Backend**: Spring Boot 3.5 + gRPC with Java 24
+- **🌐 API Gateway**: Apollo Federation for unified GraphQL API
+- **🎨 Frontend**: React 18 + Apollo Client with Vite
+- **🐋 DevOps**: Full Docker setup with multi-stage builds
+- **🚦 CI/CD**: Comprehensive GitHub Actions pipeline
+- **🔒 Security**: Trivy vulnerability scanning
+- **📊 Monitoring**: Health checks and service discovery
 
-4. Start the development server:
-   ```bash
-   npm start
-   ```
+## 🚧 Troubleshooting
 
-The frontend will start on http://localhost:3000
+| Issue | Quick Fix | Details |
+|-------|-----------|---------|
+| **503 Service Unavailable** | Check if backend is running on port 9090 | [Development Guide](./docs/DEVELOPMENT.md#troubleshooting) |
+| **GraphQL Errors** | Verify service schemas and gateway config | [Architecture Guide](./docs/INSTRUCTIONS.md#troubleshooting) |
+| **Docker Build Issues** | Clean Docker cache: `docker system prune` | [Development Guide](./docs/DEVELOPMENT.md#docker-issues) |
 
-## API Endpoints
+## 🔗 Quick Links
 
-### gRPC Service (via gRPC-Web on port 8080)
-- `GetUser(GetUserRequest)` - Get user by ID
-- `GetAllUsers(GetAllUsersRequest)` - Get all users
-- `CreateUser(CreateUserRequest)` - Create new user
-- `UpdateUser(UpdateUserRequest)` - Update user
-- `DeleteUser(DeleteUserRequest)` - Delete user
-- `StreamUsers(StreamUsersRequest)` - Stream users (server streaming)
+- **GraphQL Playground**: http://localhost:4000/graphql
+- **Frontend**: http://localhost:3000
+- **API Documentation**: [GraphQL API Reference](./docs/GRAPHQL_API.md)
+- **CI/CD Pipeline**: [GitHub Actions Workflow](./.github/workflows/ci-cd.yml)
 
-All gRPC calls are made through the Envoy proxy at http://localhost:8080
+## 📈 Benefits of This Architecture
 
-## Protocol Buffer Definition
+- **Type Safety**: End-to-end type safety from database to UI
+- **Performance**: HTTP/2 multiplexing and binary gRPC protocol  
+- **Developer Experience**: GraphQL introspection and strong IDE support
+- **Scalability**: Microservices with federation for easy service addition
+- **Modern Stack**: Latest versions of Spring Boot, React, and Apollo
 
-The `user_service.proto` file defines:
-- `User` message with id, name, email, role, and creation timestamp
-- Request/response messages for all operations
-- `UserService` with unary and streaming RPC methods
-
-## Usage
-
-1. Start the services using Docker Compose or manually
-2. Open http://localhost:3000 in your browser
-3. The application will automatically connect to the gRPC backend via Envoy proxy
-4. Use the UI to manage users with full CRUD operations
-
-### Sample Operations
-- **View Users**: The application loads with sample users via gRPC
-- **Add User**: Click "Add User" to create a new user via gRPC
-- **Edit User**: Click "Edit" on any user card to update via gRPC
-- **Delete User**: Click "Delete" on any user card to remove via gRPC
-- **Refresh**: Click "Refresh" to reload users from the gRPC server
-
-## Technology Stack
-
-### Backend
-- **Spring Boot 3.5.4-SNAPSHOT**: Latest Spring framework
-- **Spring gRPC 0.8.0**: Official Spring gRPC integration
-- **Protocol Buffers 4.30.2**: Message serialization
-- **gRPC 1.72.0**: High-performance RPC framework
-- **Maven**: Build and dependency management
-
-### Frontend
-- **React 18**: Modern React with functional components
-- **TypeScript**: Type-safe JavaScript
-- **gRPC-Web**: Direct gRPC communication from browser
-- **CSS3**: Modern styling with Grid and Flexbox
-- **Protobuf**: Generated TypeScript client code
-
-## Development Notes
-
-### Backend Compilation
-The project uses the `io.github.ascopes:protobuf-maven-plugin` to generate Java classes from `.proto` files. Generated classes are placed in `target/generated-sources/protobuf/`.
-
-### Frontend gRPC Client Generation
-The frontend uses `protoc` with `protoc-gen-grpc-web` to generate TypeScript client code from `.proto` files. Generated files are placed in `src/generated/`.
-
-### Envoy Proxy Configuration
-Envoy acts as a translation layer between the browser and gRPC backend:
-- Receives gRPC-Web requests on port 8080
-- Translates them to standard gRPC calls to backend on port 9090
-- Handles CORS and HTTP/2 requirements
-
-### Spring gRPC Configuration
-The backend uses the official Spring gRPC support with:
-- `@GrpcService` annotation for service implementation
-- Automatic server configuration via Spring Boot starter
-- Integration with Spring's dependency injection
-
-## Future Enhancements
-
-1. **Server Streaming**: Implement real-time user updates via gRPC streaming
-2. **Authentication**: Add JWT or OAuth2 authentication with gRPC interceptors
-3. **Database**: Replace in-memory storage with JPA/Hibernate
-4. **Validation**: Add input validation and error handling
-5. **Testing**: Add unit and integration tests for gRPC services
-6. **TLS**: Enable TLS for production gRPC communication
-7. **Load Balancing**: Add multiple backend instances with Envoy load balancing
-
-## License
+## 📝 License
 
 This project is for demonstration purposes and is provided as-is.
