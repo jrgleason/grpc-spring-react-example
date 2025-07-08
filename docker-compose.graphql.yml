@@ -1,5 +1,4 @@
 # Docker Compose with Apollo GraphQL Federation
-version: '3.8'
 
 services:
   # Existing gRPC Backend

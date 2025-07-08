@@ -6,16 +6,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Copy proto files
 COPY proto/ /app/proto/
 
 # Copy source code
 COPY . .
-
-# Build the application
-RUN npm run build
 
 # Expose port
 EXPOSE 4001

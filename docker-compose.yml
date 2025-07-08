@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   envoy:
-    image: envoyproxy/envoy:v1.28-latest
+    image: envoyproxy/envoy:v1.34.1
     ports:
       - "8080:8080"
       - "9901:9901"
@@ -20,6 +18,33 @@ services:
       - "9090:9090"
     networks:
       - grpc-network
+
+  user-graphql-service:
+    build: ./user-graphql-service
+    ports:
+      - "4001:4001"
+    networks:
+      - grpc-network
+    depends_on:
+      - grpc-backend
+
+  apollo-gateway:
+    build: ./apollo-gateway
+    ports:
+      - "4000:4000"
+    networks:
+      - grpc-network
+    depends_on:
+      - user-graphql-service
+
+  frontend-graphql:
+    build: ./frontend-graphql
+    ports:
+      - "3001:3000"
+    networks:
+      - grpc-network
+    depends_on:
+      - apollo-gateway
 
 networks:
   grpc-network:
