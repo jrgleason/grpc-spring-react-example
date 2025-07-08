@@ -22,5 +22,9 @@
   },
   "devDependencies": {
     "grpc-tools": "latest"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=9.0.0"
   }
 }
