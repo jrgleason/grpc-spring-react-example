@@ -12,70 +12,6 @@
 # Windows
 ehthumbs.db
 Thumbs.db
-<<<<<<< HEAD
-
-# Linux
-*~
-
-# Temporary files
-*.log
-*.tmp
-*.temp
-*.pid
-*.seed
-*.pid.lock
-
-# =============================================================================
-# IDE AND EDITOR CONFIGURATIONS
-# =============================================================================
-
-# VS Code
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-
-# IntelliJ IDEA
-.idea/
-*.iws
-*.iml
-*.ipr
-out/
-
-# Eclipse/STS
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-# NetBeans
-nbproject/private/
-nbbuild/
-dist/
-nbdist/
-.nb-gradle/
-
-# Vim/Emacs
-*.swp
-*.swo
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# =============================================================================
-# JAVA/SPRING BOOT BACKEND
-# =============================================================================
-
-# Maven
-backend/target/
-
-=======
 
 # Linux
 *~
@@ -131,7 +67,6 @@ nbdist/
 backend/target/
 target/
 
->>>>>>> 05cd798c7 (Add GraphQL and do some basic cleaning (#2))
 # Gradle
 backend/.gradle/
 backend/build/
@@ -160,15 +95,8 @@ bower_components/
 # Build outputs
 dist/
 build/
-<<<<<<< HEAD
-<<<<<<< HEAD
-target/
-=======
->>>>>>> 05cd798c7 (Add GraphQL and do some basic cleaning (#2))
-=======
 **/dist/
 **/build/
->>>>>>> be7e3ce9f (removing the dist directory)
 .next/
 .nuxt/
 .vuepress/dist/
@@ -178,50 +106,6 @@ frontend/src/proto/
 **/src/proto/
 **/generated/
 generated/
-<<<<<<< HEAD
-
-# Package managers
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
-*.tgz
-.yarn-integrity
-.npm
-
-# Testing and coverage
-coverage/
-*.lcov
-.nyc_output
-
-# Cache directories
-.cache/
-.parcel-cache/
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
-# TypeScript
-*.tsbuildinfo
-
-# Build tools
-.grunt/
-.fusebox/
-
-# Runtime
-pids/
-.node_repl_history
-
-# Storybook
-.out/
-.storybook-out/
-
-# =============================================================================
-# ENVIRONMENT AND CONFIGURATION
-# =============================================================================
-
-=======
 
 # Package managers and logs
 npm-debug.log*
@@ -277,7 +161,6 @@ logs/
 # ENVIRONMENT AND CONFIGURATION
 # =============================================================================
 
->>>>>>> 05cd798c7 (Add GraphQL and do some basic cleaning (#2))
 # Environment variables
 .env
 .env.local
@@ -302,9 +185,6 @@ logs/
 # Temporary directories
 tmp/
 temp/
-logs/
-
-.vscode
 **/tmp/
 **/temp/
 
