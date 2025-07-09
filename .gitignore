@@ -16,14 +16,6 @@ Thumbs.db
 # Linux
 *~
 
-# Temporary files
-*.log
-*.tmp
-*.temp
-*.pid
-*.seed
-*.pid.lock
-
 # =============================================================================
 # IDE AND EDITOR CONFIGURATIONS
 # =============================================================================
@@ -73,6 +65,7 @@ nbdist/
 
 # Maven
 backend/target/
+target/
 
 # Gradle
 backend/.gradle/
@@ -95,22 +88,26 @@ backend/HELP.md
 
 # Dependencies
 node_modules/
+**/node_modules/
 jspm_packages/
 bower_components/
 
 # Build outputs
 dist/
 build/
-target/
+**/dist/
+**/build/
 .next/
 .nuxt/
 .vuepress/dist/
 
 # Generated protobuf files
 frontend/src/proto/
+**/src/proto/
+**/generated/
 generated/
 
-# Package managers
+# Package managers and logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -139,13 +136,26 @@ coverage/
 .grunt/
 .fusebox/
 
-# Runtime
+# Runtime data
 pids/
+*.pid
+*.seed
+*.pid.lock
 .node_repl_history
 
 # Storybook
 .out/
 .storybook-out/
+
+# =============================================================================
+# LOGS AND TEMPORARY FILES
+# =============================================================================
+
+# General logs
+logs/
+*.log
+*.tmp
+*.temp
 
 # =============================================================================
 # ENVIRONMENT AND CONFIGURATION
@@ -175,6 +185,11 @@ pids/
 # Temporary directories
 tmp/
 temp/
-logs/
+**/tmp/
+**/temp/
 
+# Service-specific ignores
+**/target/
+**/.env
+**/.env.local
 .vscode

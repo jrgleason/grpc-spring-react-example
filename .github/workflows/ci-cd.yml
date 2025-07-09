@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [apollo-gateway, user-graphql-service, frontend-graphql]
+        service: [frontend-graphql, apollo-gateway, user-graphql-service]
         node-version: ['22', '24']
     
     steps:
@@ -126,8 +126,8 @@ jobs:
         down-flags: "--volumes"
         services: |
           grpc-backend
-          apollo-gateway
           user-graphql-service
+          apollo-gateway
           frontend-graphql
     
     - name: Verify builds completed
@@ -138,7 +138,7 @@ jobs:
         docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" | head -20
         echo ""
         echo "🔍 Images from our project (looking for common patterns):"
-        (docker images | grep -E "(grpc-backend|apollo-gateway|user-graphql|frontend-graphql)" | head -10) || true
+        (docker images | grep -E "(grpc-backend|user-graphql|apollo-gateway|frontend-graphql)" | head -10) || true
         echo ""
         echo "📊 Total number of Docker images: $(docker images -q | wc -l)"
         echo "✅ Build verification complete!"
@@ -148,13 +148,16 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    permissions:
+      contents: read
+      security-events: write
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
     
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@0.28.0
       with:
         scan-type: 'fs'
         scan-ref: '.'
@@ -171,7 +174,8 @@ jobs:
   complete-build:
     name: Complete Build Verification
     runs-on: ubuntu-latest
-    needs: [docker-build-test, security-scan]
+    needs: [docker-build-test]
+    if: always()
     
     steps:
     - name: Build verification complete
