@@ -153,6 +153,7 @@ backend/HELP.md
 
 # Dependencies
 node_modules/
+**/node_modules/
 jspm_packages/
 bower_components/
 
@@ -160,15 +161,22 @@ bower_components/
 dist/
 build/
 <<<<<<< HEAD
+<<<<<<< HEAD
 target/
 =======
 >>>>>>> 05cd798c7 (Add GraphQL and do some basic cleaning (#2))
+=======
+**/dist/
+**/build/
+>>>>>>> be7e3ce9f (removing the dist directory)
 .next/
 .nuxt/
 .vuepress/dist/
 
 # Generated protobuf files
 frontend/src/proto/
+**/src/proto/
+**/generated/
 generated/
 <<<<<<< HEAD
 
@@ -297,3 +305,10 @@ temp/
 logs/
 
 .vscode
+**/tmp/
+**/temp/
+
+# Service-specific ignores
+**/target/
+**/.env
+**/.env.local
