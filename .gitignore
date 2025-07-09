@@ -192,3 +192,4 @@ temp/
 **/target/
 **/.env
 **/.env.local
+.gitignore
