@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [frontend]
+        service: [frontend-graphql, apollo-gateway, user-graphql-service]
         node-version: ['22', '24']
     
     steps:
@@ -122,10 +122,13 @@ jobs:
     - name: Test Docker builds
       uses: isbang/compose-action@v1.5.1
       with:
-        compose-file: "./docker-compose.yml"
+        compose-file: "./docker-compose.graphql.yml"
         down-flags: "--volumes"
         services: |
           grpc-backend
+          user-graphql-service
+          apollo-gateway
+          frontend-graphql
     
     - name: Verify builds completed
       run: |
@@ -135,7 +138,7 @@ jobs:
         docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}" | head -20
         echo ""
         echo "🔍 Images from our project (looking for common patterns):"
-        (docker images | grep -E "(grpc-backend|envoy)" | head -10) || true
+        (docker images | grep -E "(grpc-backend|user-graphql|apollo-gateway|frontend-graphql)" | head -10) || true
         echo ""
         echo "📊 Total number of Docker images: $(docker images -q | wc -l)"
         echo "✅ Build verification complete!"
